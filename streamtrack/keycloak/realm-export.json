@@ -1,0 +1,27 @@
+{
+  "realm": "streamtrack",
+  "clients": [
+    {
+      "clientId": "frontend",
+      "redirectUris": ["http://localhost:3000/*"],
+      "publicClient": true
+    }
+  ],
+  "roles": {
+    "realm": [{ "name": "user" }, { "name": "admin" }]
+  },
+  "users": [
+    {
+      "username": "admin1",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "admin1" }],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "user1",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "user1" }],
+      "realmRoles": ["user"]
+    }
+  ]
+}
