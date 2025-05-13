@@ -36,6 +36,16 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
 
+  tmdb-proxy:
+    build: ./tmdb-proxy
+    container_name: tmdb-proxy
+    env_file: 
+      - .env
+    ports:
+      - "9000:9000"
+    networks:
+      - streamtrack
+
 volumes:
   postgres_data:
   keycloak_data:
