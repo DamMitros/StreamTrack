@@ -21,3 +21,20 @@ class NoteResponse(NoteBase):
   class Config:
     from_attributes = True 
     populate_by_name = True
+
+class WatchlistItemBase(BaseModel):
+  movie_id: str
+  title: str
+  media_type: str 
+
+class WatchlistItemCreate(WatchlistItemBase):
+  pass
+
+class WatchlistItemResponse(WatchlistItemBase):
+  id: str = Field(alias="_id") 
+  user_id: str
+  added_at: datetime
+
+  class Config:
+    from_attributes = True
+    populate_by_name = True

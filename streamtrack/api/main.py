@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import notes, admin
-from database import notes_collection
+
+from routes.notes import router as notes_router
+from routes.admin import router as admin_router
+from routes.watchlist import router as watchlist_router
 
 app = FastAPI()
 
@@ -17,8 +19,9 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-app.include_router(notes.router, prefix="/api")
-app.include_router(admin.router)
+app.include_router(notes_router, prefix="/api", tags=["Notes"])
+app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
+app.include_router(admin_router, prefix="/api", tags=["Admin"])
 
 @app.get("/")
 async def root():

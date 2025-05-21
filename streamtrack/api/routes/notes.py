@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Optional
+from typing import List
 from bson import ObjectId
 from datetime import datetime
 from pymongo import ReturnDocument 

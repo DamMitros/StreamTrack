@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from database import notes_collection
 from auth import require_role
 from schemas import NoteResponse 

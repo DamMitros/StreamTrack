@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { searchTMDB } from "@/services/tmdbService";
+import { searchMultiTMDB } from "@/services/tmdbService";
 import { useKeycloak } from "@react-keycloak/web";
 import { getNotes, createNote, deleteNote, Note, NoteIn } from "@/services/apiService";
+import MyWatchlistComponent from "@/components/watchlist";
 
 interface SearchResultItem {
   id: number;
@@ -61,7 +62,7 @@ export default function HomePage() {
     setResults([]);
 
     try {
-      const data = await searchTMDB(searchTerm);
+      const data = await searchMultiTMDB(searchTerm);
       setResults(data.results);
     } catch (err) {
       setError((err as Error).message);
@@ -209,7 +210,7 @@ export default function HomePage() {
                     <strong>Film/Serial ID: {note.movie_id}</strong>
                     <p>{note.content}</p>
                     <button
-                      onClick={() => handleDeleteNote(note._id)} // note._id is a valid string here
+                      onClick={() => handleDeleteNote(note._id)} 
                       style={{padding: "5px 10px", backgroundColor: "lightcoral", color: "white", border: "none", cursor: "pointer",}}>
                       Usuń
                     </button>
@@ -222,6 +223,7 @@ export default function HomePage() {
           )}
         </div>
       )}
+      <MyWatchlistComponent />
     </div>
   );
 }
