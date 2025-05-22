@@ -32,7 +32,7 @@ const tvSortOptions = [
 ];
 
 
-const MoviesPage = () => {
+const ExplorePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -278,68 +278,88 @@ const MoviesPage = () => {
   const currentSortOptions = selectedMediaType === "movie" ? movieSortOptions : tvSortOptions;
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Katalog Mediów</h1>
+    <div className="max-w-5xl mx-auto py-10 px-4 sm:px-8">
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg mb-2 tracking-tight">
+          Katalog Mediów
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300">
+          Odkrywaj filmy i seriale na różnych platformach streamingowych!
+        </p>
+      </div>
 
-      <MediaTypeSwitcher
-        selectedMediaType={selectedMediaType}
-        onSelectMediaType={handleMediaTypeSelect}
-      />
-
-      <SearchControls
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
-        onSubmit={handleSubmitOrFilter}
-        onApplyFilters={() => handleApiSearch(1)}
-        loading={loading}
-        placeholder={`Wyszukaj ${selectedMediaType === "movie" ? "filmy" : selectedMediaType === "tv" ? "seriale" : "filmy i seriale"}...`}
-        showApplyFiltersButton={!searchTerm.trim()}
-      />
-      
-      <div style={{ marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
-        {((selectedMediaType === "movie" || selectedMediaType === "tv") || (searchTerm.trim() && selectedMediaType !== "all")) && genresForFilter.length > 0 && (
-          <FilterGroup
-            label="Kategorie"
-            items={genresForFilter}
-            selectedItems={selectedGenres}
-            onItemChange={handleGenreChange}
-            loading={loading}
-            itemType="genre"
+      <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+        <div className="flex-1">
+          <MediaTypeSwitcher
+            selectedMediaType={selectedMediaType}
+            onSelectMediaType={handleMediaTypeSelect}
           />
+        </div>
+        <div className="flex-1">
+          <SearchControls
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            onSubmit={handleSubmitOrFilter}
+            onApplyFilters={() => handleApiSearch(1)}
+            loading={loading}
+            placeholder={`Wyszukaj ${selectedMediaType === "movie" ? "filmy" : selectedMediaType === "tv" ? "seriale" : "filmy i seriale"}...`}
+            showApplyFiltersButton={!searchTerm.trim()}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-6 mb-8">
+        {((selectedMediaType === "movie" || selectedMediaType === "tv") || (searchTerm.trim() && selectedMediaType !== "all")) && genresForFilter.length > 0 && (
+          <div className="flex-1 min-w-[220px]">
+            <FilterGroup
+              label="Kategorie"
+              items={genresForFilter}
+              selectedItems={selectedGenres}
+              onItemChange={handleGenreChange}
+              loading={loading}
+              itemType="genre"
+            />
+          </div>
         )}
         {((selectedMediaType === "movie" || selectedMediaType === "tv" || (selectedMediaType === "all" && !searchTerm.trim())) || (searchTerm.trim() && selectedMediaType !== "all")) && platformsForFilter.length > 0 && (
-          <FilterGroup
-            label="Platformy"
-            items={platformsForFilter}
-            selectedItems={selectedPlatforms}
-            onItemChange={handlePlatformChange}
-            loading={loading}
-            itemType="platform"
-          />
+          <div className="flex-1 min-w-[220px]">
+            <FilterGroup
+              label="Platformy"
+              items={platformsForFilter}
+              selectedItems={selectedPlatforms}
+              onItemChange={handlePlatformChange}
+              loading={loading}
+              itemType="platform"
+            />
+          </div>
         )}
         {(selectedMediaType === "movie" || selectedMediaType === "tv") && !searchTerm.trim() && (
-          <SortDropdown
-            options={currentSortOptions}
-            selectedValue={selectedSortBy}
-            onValueChange={setSelectedSortBy}
-            loading={loading}
-          />
+          <div className="flex-1 min-w-[180px]">
+            <SortDropdown
+              options={currentSortOptions}
+              selectedValue={selectedSortBy}
+              onValueChange={setSelectedSortBy}
+              loading={loading}
+            />
+          </div>
         )}
       </div>
 
       {searchTerm.trim() && (
-         <p style={{marginBottom: "10px", color: "#555", fontSize: "0.9em"}}>
-           Przy wyszukiwaniu tekstem, filtrowanie po platformie odbywa się po załadowaniu listy. Sortowanie jest domyślne dla wyszukiwarki. Filtrowanie po kategorii jest stosowane po stronie klienta.
-         </p>
+        <p className="mb-4 text-sm text-blue-600 dark:text-blue-300 italic">
+          Przy wyszukiwaniu tekstem, filtrowanie po platformie odbywa się po załadowaniu listy. Sortowanie jest domyślne dla wyszukiwarki. Filtrowanie po kategorii jest stosowane po stronie klienta.
+        </p>
       )}
       {selectedMediaType === "all" && !searchTerm.trim() && (
-         <p style={{marginBottom: "10px", color: "#555", fontSize: "0.9em"}}>
-           W trybie "Wszystko" bez wyszukiwania: filtrowanie po kategorii jest wyłączone. Możesz filtrować po platformach. Wyświetlane są popularne pozycje.
-         </p>
+        <p className="mb-4 text-sm text-purple-600 dark:text-purple-300 italic">
+          W trybie "Wszystko" bez wyszukiwania: filtrowanie po kategorii jest wyłączone. Możesz filtrować po platformach. Wyświetlane są popularne pozycje.
+        </p>
       )}
-      {error && <p style={{ color: "red" }}>Błąd: {error}</p>}
+      {error && <p className="text-red-500 font-semibold mb-4">Błąd: {error}</p>}
 
-      <ResultsDisplay results={displayedResults} />
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-8">
+        <ResultsDisplay results={displayedResults} />
+      </div>
 
       <PaginationControls
         currentPage={currentPage}
@@ -347,11 +367,15 @@ const MoviesPage = () => {
         onPageChange={handleApiSearch}
         loading={loading}
       />
-      
-      {!loading && displayedResults.length === 0 && (searchTerm || selectedGenres.length > 0 || selectedPlatforms.length > 0) && <p>Brak wyników dla podanych kryteriów.</p>}
-      {!loading && displayedResults.length === 0 && !searchTerm && selectedGenres.length === 0 && selectedPlatforms.length === 0 && <p>Wyszukaj lub wybierz filtry, aby zobaczyć wyniki.</p>}
+
+      {!loading && displayedResults.length === 0 && (searchTerm || selectedGenres.length > 0 || selectedPlatforms.length > 0) && (
+        <p className="text-center text-gray-500 mt-8">Brak wyników dla podanych kryteriów.</p>
+      )}
+      {!loading && displayedResults.length === 0 && !searchTerm && selectedGenres.length === 0 && selectedPlatforms.length === 0 && (
+        <p className="text-center text-gray-400 mt-8">Wyszukaj lub wybierz filtry, aby zobaczyć wyniki.</p>
+      )}
     </div>
   );
 };
 
-export default MoviesPage;
+export default ExplorePage;

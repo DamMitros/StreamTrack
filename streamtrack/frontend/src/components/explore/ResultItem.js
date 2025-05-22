@@ -2,11 +2,9 @@ import React from 'react';
 import Link from 'next/link'; 
 
 export const ResultItem = ({ item }) => {
-  const detailPageUrl = `/movies/${item.id}`;
-
   return (
     <li style={{ marginBottom: "15px", border: "1px solid #eee", padding: "10px" }}>
-      <Link href={detailPageUrl} passHref style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+      <Link href={`/explore/${item.id}?mediaType=${item.media_type}`} passHref style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
         {item.poster_path && (
           <img src={`https://image.tmdb.org/t/p/w200${item.poster_path}`} alt={item.title || item.name}
                style={{ maxWidth: '100px', minWidth: '100px', height: '150px', objectFit: 'cover', marginRight: '15px' }} />

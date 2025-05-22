@@ -62,7 +62,7 @@ async def get_notes(current_user_data: dict = Depends(get_current_user)):
 
   return processed_notes
 
-@router.get("/notes/{note_id}", response_model=NoteResponse)
+@router.get("/notes/{note_id}", response_model=NoteResponse) # W teorii może nie potrzebne?
 async def get_note(note_id: str, current_user_data: dict = Depends(get_current_user)):
   user_id_str = current_user_data["user_id"]
   try:
@@ -131,3 +131,28 @@ async def update_note(note_id: str, note_update: NoteUpdate, current_user_data: 
       updated_note_doc["created_at"] = datetime.min
 
   return updated_note_doc
+
+@router.get("/notes/media/{media_id}", response_model=List[NoteResponse])
+async def get_notes_for_media_item(media_id: str, current_user_data: dict = Depends(get_current_user)):
+  user_id_str = current_user_data["user_id"]
+
+  try:
+    cursor = notes_collection.find({"user_id": user_id_str, "movie_id": media_id})
+    notes_from_db = await cursor.to_list(length=None) 
+  except Exception as e:
+    raise HTTPException(status_code=500, detail="Error fetching notes for media from database")
+
+  processed_notes = []
+  if not notes_from_db:
+    return []
+
+  for note_item_db in notes_from_db:
+    processed_item = dict(note_item_db)
+    processed_item["_id"] = str(processed_item["_id"]) 
+    if "created_at" not in processed_item:
+      processed_item["created_at"] = datetime.min 
+    if "updated_at" not in processed_item:
+      processed_item["updated_at"] = None
+    processed_notes.append(processed_item)
+
+  return processed_notes

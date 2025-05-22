@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/context/keycloakProvider.js", "src/components/explore/MediaTypeSwitcher.js", "src/components/explore/SearchControls.js", "src/components/explore/ResultsDisplay.js", "src/components/explore/ResultItem.js", "src/components/explore/PaginationControls.js", "src/components/explore/FilterGroup.js", "src/components/explore/SortDropdown.js", "src/app/movies/page.js", "src/app/movies/[id]/page.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/context/keycloakProvider.js", "src/components/explore/MediaTypeSwitcher.js", "src/components/explore/SearchControls.js", "src/components/explore/ResultsDisplay.js", "src/components/explore/ResultItem.js", "src/components/explore/PaginationControls.js", "src/components/explore/FilterGroup.js", "src/components/explore/SortDropdown.js", "src/app/explore/page.js", "src/app/explore/[id]/page.js"],
   "exclude": ["node_modules"]
 }

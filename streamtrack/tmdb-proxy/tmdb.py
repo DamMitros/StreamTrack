@@ -2,7 +2,27 @@ from fastapi import APIRouter, HTTPException
 import httpx, os
 
 router = APIRouter()
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+
+TMDB_API_KEY_ENV = os.getenv("TMDB_API_KEY")
+TMDB_API_KEY_FILE_PATH = os.getenv("TMDB_API_KEY_FILE")
+
+if TMDB_API_KEY_FILE_PATH:
+    try:
+        with open(TMDB_API_KEY_FILE_PATH, 'r') as f:
+            TMDB_API_KEY = f.read().strip()
+    except FileNotFoundError:
+        TMDB_API_KEY = TMDB_API_KEY_ENV 
+    except Exception as e:
+        print(f"Error reading TMDB API key from secret file: {e}")
+        TMDB_API_KEY = TMDB_API_KEY_ENV 
+elif TMDB_API_KEY_ENV:
+    TMDB_API_KEY = TMDB_API_KEY_ENV
+else:
+    raise RuntimeError("TMDB_API_KEY not configured. Set TMDB_API_KEY environment variable or TMDB_API_KEY_FILE path to secret.")
+
+if not TMDB_API_KEY:
+    raise RuntimeError("TMDB_API_KEY is empty after attempting to load from env/file.")
+
 TMDB_API_URL = "https://api.themoviedb.org/3"
 
 @router.get("/search")

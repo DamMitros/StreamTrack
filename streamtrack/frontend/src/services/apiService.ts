@@ -14,6 +14,7 @@ export interface Note {
 export interface NoteIn {
   movie_id: string;
   content: string;
+  media_type: string; 
 }
 
 export interface NoteUpdateData {
@@ -81,6 +82,19 @@ export const updateNote = async (noteId: string, noteUpdateData: NoteUpdateData)
       .json()
       .catch(() => ({ detail: "Failed to update note" }));
     throw new Error(errorData.detail || "Failed to update note");
+  }
+  return response.json();
+};
+
+export const getNotesByMovieId = async (movieId: string): Promise<Note[]> => {
+  const response = await fetch(`${API_URL}/notes/media/${movieId}`, { 
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    if (response.status === 404) {
+      return [];
+    }
+    throw new Error("Failed to fetch notes for media item");
   }
   return response.json();
 };

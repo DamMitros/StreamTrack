@@ -1,3 +1,7 @@
+secrets:
+  tmdb_api_key:
+    file: ./tmdb_api_key.secret
+
 services:
   mongo:
     image: mongo:latest
@@ -10,6 +14,12 @@ services:
       - ./database/mongo-init:/docker-entrypoint-initdb.d
     networks:
       - streamtrack
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    platform: linux/amd64
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
@@ -26,30 +36,96 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak:/opt/keycloak/data/import
+    healthcheck:
+      test: ["CMD", "/opt/keycloak/bin/kc.sh", "health"]
+      interval: 30s
+      timeout: 20s      
+      retries: 5
+      start_period: 90s 
+    platform: linux/amd64
 
   tmdb-proxy:
-    build: ./tmdb-proxy
+    build:
+      context: ./tmdb-proxy
+      args:
+        PYTHON_VERSION: 3.11-slim
     container_name: tmdb-proxy
-    env_file:
-      - .env
+    environment:
+      TMDB_API_KEY_FILE: /run/secrets/tmdb_api_key
+    secrets:
+      - tmdb_api_key
     ports:
       - "9000:9000"
     networks:
       - streamtrack
+    volumes:
+      - ./tmdb-proxy:/app 
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/docs || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    platform: linux/amd64 
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      args:
+        PYTHON_VERSION: 3.11-slim
     container_name: api
     env_file:
-      - .env
+      - .env 
     ports:
       - "8000:8000"
     networks:
       - streamtrack
     depends_on:
-      - mongo
-      - keycloak
+      mongo:
+        condition: service_healthy
+      # keycloak:  # Tymczasowo
+      #   condition: service_healthy
     restart: always
+    volumes:
+      - ./api:/app 
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:8000/api || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    platform: linux/amd64
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev 
+      args:
+        NODE_VERSION: 20-alpine
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - streamtrack
+    env_file:
+      - .env 
+    volumes:
+      - ./frontend:/app 
+      - /app/node_modules 
+      - /app/.next 
+    command: npm run dev
+    depends_on:
+      # api:
+      #   condition: service_healthy
+      tmdb-proxy:
+        condition: service_healthy
+      # keycloak: # Tymczasowo 
+      #   condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    platform: linux/amd64
     
 volumes:
   keycloak_data:

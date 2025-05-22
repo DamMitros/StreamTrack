@@ -5,6 +5,7 @@ from datetime import datetime
 class NoteBase(BaseModel):
   movie_id: str
   content: str
+  media_type: str 
 
 class NoteCreate(NoteBase):
   pass

@@ -31,16 +31,9 @@ export default function HomePage() {
       setNoteError(null);
       try {
         const notes = await getNotes();
-        notes.forEach((n) => {
-          if (!n || typeof n._id !== "string" || !n._id.trim()) {
-            console.error("Fetched note in fetchUserNotes has invalid _id:",
-                          n, "typeof _id:", typeof n._id);
-          }
-        });
         setUserNotes(notes);
       } catch (err) {
         setNoteError((err as Error).message);
-        console.error("Failed to fetch notes:", err);
       } finally {
         setLoadingNotes(false);
       }
@@ -56,7 +49,6 @@ export default function HomePage() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
-
     setLoading(true);
     setError(null);
     setResults([]);
@@ -66,7 +58,6 @@ export default function HomePage() {
       setResults(data.results);
     } catch (err) {
       setError((err as Error).message);
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -75,155 +66,136 @@ export default function HomePage() {
   const handleCreateNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!noteContent.trim() || !selectedMovieIdForNote) {
-      setNoteError("Movie ID and content are required to create a note.");
+      setNoteError("Movie ID i treść notatki są wymagane.");
       return;
     }
     if (!keycloak.authenticated) {
-      setNoteError("You must be logged in to create notes.");
+      setNoteError("Musisz być zalogowany, aby dodawać notatki.");
       return;
     }
 
-    setNoteError(null);
     try {
       const newNoteData: NoteIn = {
         movie_id: selectedMovieIdForNote,
         content: noteContent,
+        media_type: ""
       };
-      const createdNote = await createNote(newNoteData); 
+      await createNote(newNoteData);
       setNoteContent("");
-      setSelectedMovieIdForNote(null); 
-      fetchUserNotes(); 
+      setSelectedMovieIdForNote(null);
+      fetchUserNotes();
     } catch (err) {
       setNoteError((err as Error).message);
-      console.error("Failed to create note:", err);
     }
   };
 
   const handleDeleteNote = async (noteId: string | undefined) => {
-    if (!keycloak.authenticated) {
-      setNoteError("You must be logged in to delete notes.");
+    if (!keycloak.authenticated || !noteId?.trim()) {
+      setNoteError("Błąd przy usuwaniu notatki.");
       return;
     }
 
-    if (!noteId || typeof noteId !== "string" || !noteId.trim()) {
-      setNoteError("Cannot delete note: ID is missing or invalid.");
-      console.error("handleDeleteNote called with invalid noteId:",
-                     noteId, "typeof noteId:", typeof noteId);
-      return;
-    }
-    setNoteError(null);
     try {
       await deleteNote(noteId);
-      fetchUserNotes(); 
+      fetchUserNotes();
     } catch (err) {
       setNoteError((err as Error).message);
-      console.error("Failed to delete note:", err);
     }
   };
+return (
+  <div className="max-w-4xl mx-auto pb-12 px-4 flex-grow space-y-12">
+    <h1 className="text-5xl font-bold text-center bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">Streamtrack</h1>
 
-  return (
-    <div>
-      <h2>Witaj w Streamtrack!</h2>
-      <p>
-        To jest strona główna Twojej aplikacji. Możesz zacząć od przeglądania
-        dostępnych funkcji lub zalogować się, aby uzyskać dostęp do
-        spersonalizowanych treści.
-      </p>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 transition-all duration-300 hover:shadow-2xl">
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Witaj!</h2>
+      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">Możesz przeszukiwać filmy i seriale, zapisywać notatki, a także tworzyć własną watchlistę.</p>
+    </div>
 
-      <hr style={{ margin: "20px 0" }} />
-
-      <h3>Wyszukaj filmy i seriale</h3>
-      <form onSubmit={handleSearch}>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+      <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-6">Wyszukiwarka</h3>
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Np. Incepcja, Friends..."
-          style={{ marginRight: "10px", padding: "8px" }}
+          className="flex-grow p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
         />
-        <button type="submit" disabled={loading} style={{ padding: "8px 15px" }}>
-          {loading ? "Szukam..." : "Szukaj"}
-        </button>
+        <button type="submit" disabled={loading} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition disabled:bg-blue-300 dark:disabled:bg-blue-700">{loading ? "Szukam..." : "Szukaj"}</button>
       </form>
 
-      {error && <p style={{ color: "red" }}>Błąd: {error}</p>}
+      {error && <p className="text-red-500 mt-4">Błąd: {error}</p>}
 
       {results.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
-          <h4>Wyniki wyszukiwania:</h4>
-          <ul>
+        <div className="mt-6 space-y-4">
+          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Wyniki:</h4>
+          <ul className="space-y-3">
             {results.map((item) => (
-              <li key={item.id}>
-                {item.title || item.name} ({item.media_type})
+              <li key={item.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md flex justify-between items-center">
+                <span className="text-gray-800 dark:text-gray-200">
+                  {item.title || item.name}
+                  <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({item.media_type})</span>
+                </span>
                 {keycloak.authenticated && (
-                  <button onClick={() => {
-                    setSelectedMovieIdForNote(String(item.id)); 
-                    setNoteContent("");
+                  <button className="ml-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition"
+                    onClick={() => {
+                      setSelectedMovieIdForNote(String(item.id));
+                      setNoteContent("");
                     }}
-                    style={{ marginLeft: "10px", padding: "3px 6px" }}>
-                    Dodaj notatkę
-                  </button>
+                  >Dodaj notatkę</button>
                 )}
               </li>
             ))}
           </ul>
         </div>
       )}
-
-      {keycloak.authenticated && selectedMovieIdForNote && (
-        <div style={{marginTop: "20px",border: "1px solid #eee",padding: "15px",}}>
-          <h4>Dodaj notatkę dla filmu/serialu ID: {selectedMovieIdForNote}</h4>
-          <form onSubmit={handleCreateNote}>
-            <textarea
-              value={noteContent}
-              onChange={(e) => setNoteContent(e.target.value)}
-              placeholder="Twoja notatka..."
-              rows={3}
-              style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
-            />
-            <button type="submit" style={{ padding: "8px 15px" }}>Zapisz notatkę</button>
-          </form>
-        </div>
-      )}
-
-      {keycloak.authenticated && (
-        <div style={{ marginTop: "30px" }}>
-          <h3>Twoje Notatki</h3>
-          {loadingNotes && <p>Ładowanie notatek...</p>}
-          {noteError && (
-            <p style={{ color: "red" }}>Błąd notatek: {noteError}</p>
-          )}
-          {userNotes.length > 0 ? (
-            <ul>
-              {userNotes.map((note) => {
-                if (!note || typeof note._id !== "string" || !note._id.trim()) {
-                  console.warn(
-                    "Render: Skipping note due to missing or invalid _id:",
-                    note,
-                    "typeof _id:",
-                    note ? typeof note._id : "note is undefined"
-                  );
-                  return null; 
-                }
-                return (
-                  <li key={note._id} style={{marginBottom: "10px", padding: "10px", border: "1px solid #ddd",}}>
-                    <strong>Film/Serial ID: {note.movie_id}</strong>
-                    <p>{note.content}</p>
-                    <button
-                      onClick={() => handleDeleteNote(note._id)} 
-                      style={{padding: "5px 10px", backgroundColor: "lightcoral", color: "white", border: "none", cursor: "pointer",}}>
-                      Usuń
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            !loadingNotes && <p>Nie masz jeszcze żadnych notatek.</p>
-          )}
-        </div>
-      )}
-      <MyWatchlistComponent />
     </div>
-  );
+
+    {keycloak.authenticated && selectedMovieIdForNote && (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Dodaj notatkę dla ID: {selectedMovieIdForNote}</h4>
+        <form onSubmit={handleCreateNote}>
+          <textarea
+            value={noteContent}
+            onChange={(e) => setNoteContent(e.target.value)}
+            placeholder="Twoja notatka..."
+            rows={3}
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 mb-4"
+          />
+          <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition">Zapisz notatkę</button>
+        </form>
+      </div>
+    )}
+
+    {keycloak.authenticated && (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Twoje Notatki</h3>
+        {loadingNotes && <p className="text-gray-500">Ładowanie notatek...</p>}
+        {noteError && <p className="text-red-500">Błąd notatek: {noteError}</p>}
+
+        {userNotes.length > 0 ? (
+          <ul className="space-y-4">
+            {userNotes.map((note) => {
+              if (!note || typeof note._id !== "string" || !note._id.trim()) return null;
+              return (
+                <li key={note._id} className="p-4 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    <strong>ID: {note.movie_id}</strong>
+                  </p>
+                  <p className="text-gray-800 dark:text-gray-100">{note.content}</p>
+                  <button onClick={() => handleDeleteNote(note._id)} className="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">Usuń</button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          !loadingNotes && <p className="text-gray-500 dark:text-gray-400">Nie masz jeszcze żadnych notatek.</p>
+        )}
+      </div>
+    )}
+
+    <MyWatchlistComponent />
+  </div>
+);
+
 }

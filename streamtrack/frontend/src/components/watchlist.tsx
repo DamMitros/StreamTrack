@@ -39,49 +39,49 @@ const MyWatchlistComponent = () => {
   }, [initialized, keycloak.authenticated, fetchUserWatchlist]);
 
   if (!initialized) {
-    return <div>Ładowanie informacji o użytkowniku...</div>;
+    return <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">Ładowanie informacji o użytkowniku...</div>;
   }
 
   if (!keycloak.authenticated) {
     return (
-      <div style={{ marginTop: "30px" }}>
-        <h3>Twoja Watchlista</h3>
-        <p>Zaloguj się, aby zobaczyć swoją watchlistę.</p>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Twoja Watchlista</h3>
+        <p className="text-gray-600 dark:text-gray-400">Zaloguj się, aby zobaczyć swoją watchlistę.</p>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div style={{ marginTop: "30px" }}>
-        <h3>Twoja Watchlista</h3>
-        <p>Ładowanie watchlisty...</p>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Twoja Watchlista</h3>
+        <p className="text-gray-600 dark:text-gray-400">Ładowanie watchlisty...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ marginTop: "30px" }}>
-        <h3>Twoja Watchlista</h3>
-        <p style={{ color: "red" }}>Błąd ładowania watchlisty: {error}</p>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Twoja Watchlista</h3>
+        <p className="text-red-500">Błąd ładowania watchlisty: {error}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ marginTop: "30px" }}>
-      <h3>Twoja Watchlista</h3>
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Twoja Watchlista</h3>
       {watchlistItems.length > 0 ? (
-        <ul>
+        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {watchlistItems.map((item) => (
-            <li key={item._id}>
-              {item.title}{" "}
+            <li key={item._id} className="py-3">
+              <span className="text-gray-700 dark:text-gray-300">{item.title}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p>Twoja watchlista jest pusta.</p>
+        <p className="text-gray-600 dark:text-gray-400">Twoja watchlista jest pusta.</p>
       )}
     </div>
   );
