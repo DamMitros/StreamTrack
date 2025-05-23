@@ -183,3 +183,21 @@ async def get_tv_item_watch_providers(tv_id: int, watch_region: str = "PL"):
         data = response.json()
         region_providers = data.get("results", {}).get(watch_region.upper())
         return region_providers if region_providers else {}
+
+@router.get("/details/{media_type}/{media_id}")
+async def get_media_details(media_type: str, media_id: str, language: str = "pl-PL"):
+    if media_type not in ["movie", "tv"]:
+        raise HTTPException(status_code=400, detail="Invalid media_type. Must be 'movie' or 'tv'.")
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/{media_type}/{media_id}",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": language,
+            },
+        )
+        if response.status_code != 200:
+            error_detail = response.json().get("status_message", "Error fetching data from TMDB") if response.content else "Error fetching data from TMDB"
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        return response.json()

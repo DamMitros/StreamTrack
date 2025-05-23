@@ -1,51 +1,88 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Note, NoteIn, NoteUpdateData, getNotesByMovieId, createNote, updateNote, deleteNote } from '@/services/apiService';
-import SimpleAlert from '@/components/common/SimpleAlert'; 
+import { Note, NoteIn, NoteUpdateData, getNotesByMovieId, 
+  getNotes, createNote, updateNote, deleteNote } from '@/services/apiService';
+import { getMediaDetails as fetchTmdbMediaDetails, MediaDetails as TmdbMediaDetails } from '@/services/tmdbService';
+import SimpleAlert from '@/components/common/SimpleAlert';
+import Image from 'next/image';
+import Link from 'next/link'; 
 
 interface NotesSectionProps {
-  mediaId: string;
-  mediaType: string;
-  title: string; 
+  mediaId?: string;
+  mediaType?: "movie" | "tv";
+  title?: string; 
 }
 
 const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }) => {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [mediaDetailsCache, setMediaDetailsCache] = useState<Record<string, TmdbMediaDetails>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); 
+  const [isLoadingMediaDetails, setIsLoadingMediaDetails] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [noteContent, setNoteContent] = useState('');
+  const [currentMediaId, setCurrentMediaId] = useState<string | undefined>(mediaId);
+  const [currentMediaType, setCurrentMediaType] = useState<"movie" | "tv" | undefined>(mediaType);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<'success' | 'error' | 'info'>('info');
   const [showSimpleAlert, setShowSimpleAlert] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null); 
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const displayAlert = (message: string, type: 'success' | 'error' | 'info') => {
     setAlertMessage(message);
     setAlertType(type);
     setShowSimpleAlert(true);
+    setTimeout(() => setShowSimpleAlert(false), 5000); 
   };
 
   const fetchNotes = useCallback(async () => {
-    if (!mediaId) return;
     setIsLoading(true);
     setError(null);
     try {
-      const fetchedNotes = await getNotesByMovieId(mediaId);
+      let fetchedNotes: Note[];
+      if (mediaId) { 
+        fetchedNotes = await getNotesByMovieId(mediaId);
+      } else { 
+        fetchedNotes = await getNotes();
+        fetchedNotes.forEach(note => {
+          if (note.movie_id && !mediaDetailsCache[note.movie_id]) {
+            fetchAndCacheMediaDetails(note.movie_id, note.media_type as "movie" | "tv");
+          }
+        });
+      }
       setNotes(fetchedNotes.sort((a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()));
     } catch (err: any) {
-      console.error("Failed to fetch notes:", err);
-      setError(err.message || 'Nie udało się załadować notatek.'); 
+      console.error("Nie udało się załadować notatek:", err);
+      setError(err.message || 'Nie udało się załadować notatek.');
+      displayAlert(err.message || 'Nie udało się załadować notatek.', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [mediaId]);
+  }, [mediaId, mediaDetailsCache]); 
+
+  const fetchAndCacheMediaDetails = useCallback(async (id: string, type: "movie" | "tv") => {
+    if (!id || !type || mediaDetailsCache[id]) return;
+    setIsLoadingMediaDetails(prev => ({ ...prev, [id]: true }));
+    try {
+      const details = await fetchTmdbMediaDetails(id, type); 
+      setMediaDetailsCache(prev => ({ ...prev, [id]: details }));
+    } catch (err) {
+      console.error(`Nie udało się pobrać szczegółów dla ${type} ID ${id}:`, err);
+    } finally {
+      setIsLoadingMediaDetails(prev => ({ ...prev, [id]: false }));
+    }
+  }, [mediaDetailsCache]);
 
   useEffect(() => {
     fetchNotes();
   }, [fetchNotes]);
+
+  useEffect(() => {
+    setCurrentMediaId(mediaId);
+    setCurrentMediaType(mediaType);
+  }, [mediaId, mediaType]);
 
   const handleAddNewNote = () => {
     setEditingNote(null);
@@ -56,6 +93,8 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
     setNoteContent(note.content);
+    setCurrentMediaId(note.movie_id); 
+    setCurrentMediaType(note.media_type as "movie" | "tv");
     setShowForm(true);
   };
 
@@ -63,6 +102,8 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
     setShowForm(false);
     setEditingNote(null);
     setNoteContent('');
+    setCurrentMediaId(mediaId);
+    setCurrentMediaType(mediaType);
   };
 
   const handleSaveNote = async () => {
@@ -70,6 +111,12 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
       displayAlert("Treść notatki nie może być pusta.", "error");
       return;
     }
+
+    if (!currentMediaId || !currentMediaType) {
+      displayAlert("Brak informacji o filmie/serialu dla tej notatki.", "error");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
@@ -78,27 +125,29 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
         await updateNote(editingNote._id, updateData);
       } else {
         const newNoteData: NoteIn = {
-          movie_id: mediaId,
+          movie_id: currentMediaId,
           content: noteContent,
-          media_type: mediaType,
+          media_type: currentMediaType,
         };
         await createNote(newNoteData);
       }
       setShowForm(false);
       setEditingNote(null);
       setNoteContent('');
+      setCurrentMediaId(mediaId); 
+      setCurrentMediaType(mediaType); 
       fetchNotes(); 
       displayAlert(editingNote ? 'Notatka zaktualizowana!' : 'Notatka utworzona!', 'success');
     } catch (err: any) {
-      console.error("Failed to save note:", err);
+      console.error("Nie udało się zapisać notatki:", err);
       displayAlert(err.message || 'Nie udało się zapisać notatki.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteNote = async (noteId: string) => {
-    setConfirmingDelete(noteId); 
+  const handleDeleteNoteRequest = (noteId: string) => {
+    setConfirmingDelete(noteId);
     displayAlert('Czy na pewno chcesz usunąć tę notatkę? Kliknij ponownie Usuń aby potwierdzić.', 'info');
   };
 
@@ -112,16 +161,33 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
       fetchNotes(); 
       displayAlert('Notatka usunięta.', 'success');
     } catch (err: any) {
-      console.error("Failed to delete note:", err);
+      console.error("Nie udało się usunąć notatki:", err);
       displayAlert(err.message || 'Nie udało się usunąć notatki.', 'error');
     } finally {
       setIsLoading(false);
-      setConfirmingDelete(null); 
+      setConfirmingDelete(null);
     }
   };
 
+  const getMediaTitleForNote = (note: Note) => {
+    if (mediaId && title) return title;
+    const details = mediaDetailsCache[note.movie_id];
+    if (isLoadingMediaDetails[note.movie_id]) return "Ładowanie tytułu...";
+    if (!details) return `Film/Serial ID: ${note.movie_id}`; 
+    return details.title || details.name || "Nieznany tytuł";
+  };
+
+  const getPosterPathForNote = (note: Note) => {
+    if (mediaId) return null;
+    const details = mediaDetailsCache[note.movie_id];
+    if (!details || !details.poster_path) return null;
+    return details.poster_path ? `https://image.tmdb.org/t/p/w200${details.poster_path}` : null;
+  };
+  
+  const sectionTitle = mediaId && title ? `Notatki dla: ${title}` : "Moje Notatki";
+
   return (
-    <div className="mt-8 p-4 bg-gray-700 rounded-lg shadow-md relative"> 
+    <div className="mt-8 p-4 bg-gray-700 rounded-lg shadow-md relative">
       {showSimpleAlert && alertMessage && (
         <SimpleAlert
           message={alertMessage}
@@ -130,42 +196,18 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
         />
       )}
       
-      <h3 className="text-2xl font-semibold mb-4 text-white">Notatki dla: <span className="text-purple-300">{title}</span></h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-2xl font-semibold text-white">{sectionTitle}</h3>
+        { (mediaId && mediaType && !showForm) && (
+             <button onClick={handleAddNewNote} className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg shadow transition-colors text-sm" disabled={isLoading}>Dodaj Notatkę</button>
+        )}
+      </div>
 
-      {error && <p className="text-red-400 bg-red-900 p-3 rounded mb-4">Błąd: {error}</p>}
+      {error && !showSimpleAlert && <p className="text-red-400 bg-red-900 p-3 rounded mb-4">Błąd: {error}</p>}
 
-      {!showForm ? (
-        <>
-          <button onClick={handleAddNewNote} className="mb-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition-colors">Dodaj Nową Notatkę</button>
-          {isLoading && notes.length === 0 && <p className="text-gray-300">Ładowanie notatek...</p>}
-          {!isLoading && notes.length === 0 && !error && <p className="text-gray-400">Brak notatek. Dodaj pierwszą!</p>}
-          
-          <div className="space-y-4">
-            {notes.map((note) => (
-              <div key={note._id} className="bg-gray-600 p-4 rounded-md shadow">
-                <p className="text-gray-200 whitespace-pre-wrap mb-2">{note.content}</p>
-                <p className="text-xs text-gray-400">Ostatnia modyfikacja: {new Date(note.updated_at || note.created_at || Date.now()).toLocaleString()}</p>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={() => handleEditNote(note)} disabled={isLoading} className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded shadow disabled:opacity-50">Edytuj</button>
-                  <button disabled={isLoading} className={`text-sm text-white py-1 px-3 rounded shadow disabled:opacity-50 ${confirmingDelete === note._id ? 'bg-red-700 hover:bg-red-800' : 'bg-red-600 hover:bg-red-700'}`}
-                    onClick={() => {
-                      if (confirmingDelete === note._id) {
-                        confirmDelete();
-                      } else {
-                        handleDeleteNote(note._id);
-                      }
-                    }}
-                  >
-                    {confirmingDelete === note._id ? 'Potwierdź Usunięcie' : 'Usuń'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
+      {showForm ? (
         <div className="bg-gray-600 p-4 rounded-md">
-          <h4 className="text-xl font-medium mb-3 text-white">{editingNote ? 'Edytuj Notatkę' : 'Dodaj Nową Notatkę'}</h4>
+          <h4 className="text-xl font-medium mb-3 text-white">{editingNote ? `Edytuj Notatkę dla: ${getMediaTitleForNote(editingNote)}` : (currentMediaId && mediaDetailsCache[currentMediaId] ? `Dodaj Notatkę dla: ${mediaDetailsCache[currentMediaId]?.title || mediaDetailsCache[currentMediaId]?.name}` : (title ? `Dodaj Notatkę dla: ${title}` : "Dodaj Nową Notatkę"))}</h4>
           <textarea
             value={noteContent}
             onChange={(e) => setNoteContent(e.target.value)}
@@ -174,12 +216,57 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
             disabled={isLoading}
           />
           <div className="flex gap-3">
-            <button onClick={handleSaveNote} disabled={isLoading || !noteContent.trim()} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition-colors disabled:opacity-50">
-              {isLoading ? 'Zapisywanie...' : 'Zapisz'}
+            <button onClick={handleSaveNote} disabled={isLoading || !noteContent.trim() || (!editingNote && (!currentMediaId || !currentMediaType)) } className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition-colors disabled:opacity-50">
+              {isLoading ? (editingNote ? 'Zapisywanie...': 'Dodawanie...') : (editingNote ? 'Zapisz Zmiany' : 'Dodaj Notatkę')}
             </button>
             <button onClick={handleCancelForm} disabled={isLoading} className="bg-gray-400 hover:bg-gray-500 text-black font-semibold py-2 px-4 rounded-lg shadow transition-colors disabled:opacity-50">Anuluj</button>
           </div>
         </div>
+      ) : (
+        <>
+          {isLoading && notes.length === 0 && <p className="text-gray-300">Ładowanie notatek...</p>}
+          {!isLoading && notes.length === 0 && !error && <p className="text-gray-400">Brak notatek. {mediaId ? "Dodaj pierwszą notatkę dla tego tytułu!" : "Możesz je dodawać przeglądając filmy/seriale."}</p>}
+          
+          <div className="space-y-6">
+            {notes.map((note) => {
+              const posterPath = getPosterPathForNote(note);
+              const noteTitle = getMediaTitleForNote(note);
+              return (
+                <div key={note._id} className="bg-gray-600 p-4 rounded-md shadow flex gap-4">
+                  {posterPath && (
+                    <div className="flex-shrink-0 w-24 h-36 relative">
+                       <Image src={posterPath} alt={`Plakat dla ${noteTitle}`} layout="fill" objectFit="cover" className="rounded" />
+                    </div>
+                  )}
+                  <div className="flex-grow">
+                    {(!mediaId || note.movie_id !== mediaId) ? (
+                        <Link href={`/explore/${note.movie_id}?mediaType=${note.media_type}`} passHref>
+                          <h4 className="text-lg font-semibold text-purple-300 mb-1 hover:text-purple-200 cursor-pointer transition-colors">{noteTitle}</h4>
+                        </Link>
+                    ) : (
+                        <h4 className="text-lg font-semibold text-purple-300 mb-1">{noteTitle}</h4>
+                    )}
+                    <p className="text-gray-200 whitespace-pre-wrap mb-2">{note.content}</p>
+                    <p className="text-xs text-gray-400">Ostatnia modyfikacja: {new Date(note.updated_at || note.created_at || Date.now()).toLocaleString('pl-PL')}</p>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => handleEditNote(note)} disabled={isLoading} className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded shadow disabled:opacity-50">Edytuj</button>
+                      <button disabled={isLoading} className={`text-sm text-white py-1 px-3 rounded shadow disabled:opacity-50 ${confirmingDelete === note._id ? 'bg-red-700 hover:bg-red-800' : 'bg-red-600 hover:bg-red-700'}`} 
+                        onClick={() => {
+                          if (confirmingDelete === note._id) {
+                            confirmDelete();
+                          } else {
+                            handleDeleteNoteRequest(note._id);
+                          }
+                        }}>
+                        {confirmingDelete === note._id ? 'Potwierdź Usunięcie' : 'Usuń'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

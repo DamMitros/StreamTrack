@@ -7,6 +7,7 @@ export interface Note {
   user_id: string;
   movie_id: string;
   content: string;
+  media_type: "movie" | "tv"; 
   created_at?: string; 
   updated_at?: string; 
 }

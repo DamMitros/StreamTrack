@@ -4,7 +4,10 @@
     {
       "clientId": "frontend",
       "redirectUris": ["http://localhost:3000/*"],
-      "publicClient": true
+      "publicClient": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
     }
   ],
   "roles": {

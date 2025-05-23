@@ -96,6 +96,40 @@ export const getTvProviders = async (
   return data;
 };
 
+export interface MediaDetails {
+  id: number;
+  title?: string; 
+  name?: string; 
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  vote_average: number;
+  release_date?: string; 
+  first_air_date?: string; 
+  genres: Genre[];
+}
+
+export const getMediaDetails = async (
+  mediaId: string,
+  mediaType: "movie" | "tv"
+): Promise<MediaDetails> => {
+  if (!TMDB_PROXY_URL) {
+    throw new Error("TMDB Proxy URL is not configured");
+  }
+  const response = await fetch(
+    `${TMDB_PROXY_URL}/details/${mediaType}/${mediaId}`
+  );
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ detail: "Network error fetching media details" }));
+    throw new Error(
+      `Error fetching ${mediaType} details from TMDB: ${errorData.detail || response.statusText}`
+    );
+  }
+  return response.json();
+};
+
 interface DiscoverMediaParams {
   genreIds?: string[]; 
   providerIds?: string[]; 
