@@ -247,7 +247,15 @@ function ExploreDetailContent() {
       </div>
       
       {mediaId && mediaType && mediaDetails && (
-        <NotesSection mediaId={mediaId} mediaType={mediaType} title={mediaDetails.title} />
+        <>
+          {initialized && keycloak.authenticated ? (
+            <NotesSection mediaId={mediaId} mediaType={mediaType} title={mediaDetails.title} />
+          ) : (
+            <div className="mt-6 p-4 bg-gray-800 rounded-lg text-center text-gray-400">
+              Musisz być zalogowany, aby zobaczyć lub dodać notatki.
+            </div>
+          )}
+        </>
       )}
 
     </div>

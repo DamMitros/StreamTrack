@@ -114,11 +114,18 @@ const ExplorePage = () => {
     setSelectedSortBy("popularity.desc"); 
   }, [selectedMediaType, fetchFilterDropdownOptions]);
 
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      handleApiSearch(1); 
+    }
+  }, [selectedGenres, selectedPlatforms, selectedSortBy]); 
+
+
   const handleApiSearch = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
+    setDisplayedResults([]); 
     setCurrentPage(page);
-    setRawResultsFromApi([]); 
 
     try {
       let response;
@@ -150,7 +157,6 @@ const ExplorePage = () => {
             tvDiscoverParams.providerIds = selectedPlatforms.length > 0 ? selectedPlatforms : undefined;
         }
 
-
         if (selectedMediaType === "movie") {
           response = await discoverMovies(movieDiscoverParams);
           initialApiResults = response.results.map(r => ({ ...r, media_type: 'movie' })); 
@@ -174,66 +180,92 @@ const ExplorePage = () => {
           totalPgs = Math.max(moviesResp.total_pages || 0, tvResp.total_pages || 0);
         }
       }
-      setRawResultsFromApi(initialApiResults.filter(item => item.media_type === 'movie' || item.media_type === 'tv')); 
+      const filteredInitialResults = initialApiResults.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
+      setRawResultsFromApi(filteredInitialResults); 
       setTotalPages(totalPgs);
+
+      if (filteredInitialResults.length === 0) {
+        setResultsWithProviders([]); 
+        setLoading(false); 
+      } 
 
     } catch (err) {
       setError(err.message); 
       setRawResultsFromApi([]);
+      setResultsWithProviders([]); 
       setTotalPages(0);
-    } finally {
-      setLoading(false);
+      setLoading(false); 
     }
-  }, [searchTerm, selectedMediaType, selectedGenres, selectedPlatforms, selectedSortBy]);
+  }, [searchTerm, selectedMediaType, selectedGenres, selectedPlatforms, selectedSortBy]); 
 
   useEffect(() => {
     const fetchProvidersForItems = async () => {
-      if (rawResultsFromApi.length === 0) {
+      if (rawResultsFromApi.length === 0) { 
         setResultsWithProviders([]);
+        setLoading(false); 
         return;
       }
+
       setResultsWithProviders(rawResultsFromApi.map(r => ({ ...r, providersLoading: true, availableOnPlatforms: [], providersDetails: undefined })));
 
-      const augmentedResults = await Promise.all(
-        rawResultsFromApi.map(async (item) => {
-          if (item.media_type === 'person') { 
-            return { ...item, providersLoading: false };
-          }
-          try {
-            const providerData = await getItemWatchProviders(item.media_type, item.id); 
-            let currentItemPlatforms = []; 
-            if (providerData) {
-              const allProviderListsForItem = [
-                ...(providerData.flatrate || []),
-              ];
-              const uniqueProviderMap = new Map(); 
-              allProviderListsForItem.forEach(p => {
-                if (p && p.provider_id && !uniqueProviderMap.has(p.provider_id)) {
-                  uniqueProviderMap.set(p.provider_id, p);
-                }
-              });
-              currentItemPlatforms = Array.from(uniqueProviderMap.values()).sort((a,b) => (a.display_priority ?? 99) - (b.display_priority ?? 99));
+      try {
+        const augmentedResults = await Promise.all(
+          rawResultsFromApi.map(async (item) => {
+            if (item.media_type === 'person') { 
+              return { ...item, providersLoading: false };
             }
-            return { ...item, providersDetails: providerData, availableOnPlatforms: currentItemPlatforms, providersLoading: false };
-          } catch (e) {
-            console.error(`Failed to fetch providers for item ${item.id}`, e);
-            return { ...item, providersDetails: null, availableOnPlatforms: [], providersLoading: false };
-          }
-        })
-      );
-      setResultsWithProviders(augmentedResults);
+            try {
+              const providerData = await getItemWatchProviders(item.media_type, item.id); 
+              let currentItemPlatforms = []; 
+              if (providerData) {
+                const allProviderListsForItem = [
+                  ...(providerData.flatrate || []),
+                ];
+                const uniqueProviderMap = new Map(); 
+                allProviderListsForItem.forEach(p => {
+                  if (p && p.provider_id && !uniqueProviderMap.has(p.provider_id)) {
+                    uniqueProviderMap.set(p.provider_id, p);
+                  }
+                });
+                currentItemPlatforms = Array.from(uniqueProviderMap.values()).sort((a,b) => (a.display_priority ?? 99) - (b.display_priority ?? 99));
+              }
+              return { ...item, providersDetails: providerData, availableOnPlatforms: currentItemPlatforms, providersLoading: false };
+            } catch (e) {
+              console.error(`Failed to fetch providers for item ${item.id}`, e);
+              return { ...item, providersDetails: null, availableOnPlatforms: [], providersLoading: false, errorFetchingProviders: true };
+            }
+          })
+        );
+        setResultsWithProviders(augmentedResults);
+      } catch (err) {
+        console.error("Error processing providers for items:", err);
+        setError(prevError => prevError || "Błąd podczas przetwarzania informacji o dostawcach.");
+        setResultsWithProviders(rawResultsFromApi.map(r => ({ ...r, providersLoading: false, errorFetchingProviders: true })));
+      } finally {
+        setLoading(false); 
+      }
     };
 
-    fetchProvidersForItems();
-  }, [rawResultsFromApi]);
+    if (loading && rawResultsFromApi.length > 0) {
+      fetchProvidersForItems();
+    }
+  }, [rawResultsFromApi, loading]); 
 
   useEffect(() => {
+    if (loading) { 
+      return; 
+    }
+
     let finalFilteredResults = [...resultsWithProviders];
 
     if (searchTerm.trim() && selectedMediaType !== "all") {
-        finalFilteredResults = finalFilteredResults.filter(item => item.media_type === selectedMediaType);
+      finalFilteredResults = finalFilteredResults.filter(item => item.media_type === selectedMediaType);
     }
-    
+
+    if (loading) {
+      return; 
+    }
+
     if (selectedGenres.length > 0 && genresForFilter.length > 0) {
       finalFilteredResults = finalFilteredResults.filter(item =>
         item.genre_ids?.some(genreId => selectedGenres.includes(genreId.toString()))
@@ -249,7 +281,7 @@ const ExplorePage = () => {
       });
     }
     setDisplayedResults(finalFilteredResults);
-  }, [resultsWithProviders, selectedGenres, selectedPlatforms, genresForFilter, searchTerm, selectedMediaType]);
+  }, [resultsWithProviders, selectedGenres, selectedPlatforms, genresForFilter, searchTerm, selectedMediaType, loading]);
 
 
   const handleSubmitOrFilter = (event) => {
@@ -268,11 +300,17 @@ const ExplorePage = () => {
   };
 
   const handleGenreChange = (genreId) => { 
-    setSelectedGenres(prev => prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId]);
+    setSelectedGenres(prev => {
+      const newGenres = prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId];
+      return newGenres;
+    });
   };
 
   const handlePlatformChange = (platformId) => { 
-    setSelectedPlatforms(prev => prev.includes(platformId) ? prev.filter(id => id !== platformId) : [...prev, platformId]);
+    setSelectedPlatforms(prev => {
+      const newPlatforms = prev.includes(platformId) ? prev.filter(id => id !== platformId) : [...prev, platformId];
+      return newPlatforms;
+    });
   };
 
   const currentSortOptions = selectedMediaType === "movie" ? movieSortOptions : tvSortOptions;
@@ -280,12 +318,8 @@ const ExplorePage = () => {
   return (
     <div className="max-w-5xl mx-auto py-10 px-4 sm:px-8">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg mb-2 tracking-tight">
-          Katalog Mediów
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300">
-          Odkrywaj filmy i seriale na różnych platformach streamingowych!
-        </p>
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg mb-2 tracking-tight">Katalog Mediów</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300">Odkrywaj filmy i seriale na różnych platformach streamingowych!</p>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
@@ -300,7 +334,7 @@ const ExplorePage = () => {
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
             onSubmit={handleSubmitOrFilter}
-            onApplyFilters={() => handleApiSearch(1)}
+            onApplyFilters={() => handleApiSearch(1)} 
             loading={loading}
             placeholder={`Wyszukaj ${selectedMediaType === "movie" ? "filmy" : selectedMediaType === "tv" ? "seriale" : "filmy i seriale"}...`}
             showApplyFiltersButton={!searchTerm.trim()}
@@ -316,7 +350,7 @@ const ExplorePage = () => {
               items={genresForFilter}
               selectedItems={selectedGenres}
               onItemChange={handleGenreChange}
-              loading={loading}
+              loading={loading} 
               itemType="genre"
             />
           </div>
@@ -328,7 +362,7 @@ const ExplorePage = () => {
               items={platformsForFilter}
               selectedItems={selectedPlatforms}
               onItemChange={handlePlatformChange}
-              loading={loading}
+              loading={loading} 
               itemType="platform"
             />
           </div>
@@ -355,23 +389,32 @@ const ExplorePage = () => {
           W trybie "Wszystko" bez wyszukiwania: filtrowanie po kategorii jest wyłączone. Możesz filtrować po platformach. Wyświetlane są popularne pozycje.
         </p>
       )}
-      {error && <p className="text-red-500 font-semibold mb-4">Błąd: {error}</p>}
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-8">
-        <ResultsDisplay results={displayedResults} />
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-8 min-h-[200px]"> 
+        {loading && (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-xl text-gray-500">Ładowanie wyników...</p>
+          </div>
+        )}
+        {!loading && error && (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-xl text-red-500">Błąd: {error}</p>
+          </div>
+        )}
+        {!loading && !error && <ResultsDisplay results={displayedResults} />}
       </div>
 
       <PaginationControls
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handleApiSearch}
-        loading={loading}
+        loading={loading} 
       />
 
-      {!loading && displayedResults.length === 0 && (searchTerm || selectedGenres.length > 0 || selectedPlatforms.length > 0) && (
+      {!loading && !error && displayedResults.length === 0 && (searchTerm.trim() || selectedGenres.length > 0 || selectedPlatforms.length > 0) && (
         <p className="text-center text-gray-500 mt-8">Brak wyników dla podanych kryteriów.</p>
       )}
-      {!loading && displayedResults.length === 0 && !searchTerm && selectedGenres.length === 0 && selectedPlatforms.length === 0 && (
+      {!loading && !error && displayedResults.length === 0 && !searchTerm.trim() && selectedGenres.length === 0 && selectedPlatforms.length === 0 && (
         <p className="text-center text-gray-400 mt-8">Wyszukaj lub wybierz filtry, aby zobaczyć wyniki.</p>
       )}
     </div>

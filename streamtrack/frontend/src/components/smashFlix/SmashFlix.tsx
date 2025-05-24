@@ -5,6 +5,7 @@ import { getMovieProviders, getTvProviders, getMovieGenres, getTvGenres,
   discoverMovies, discoverTv, Provider, Genre } from "@/services/tmdbService";
 import { addToWatchlist, WatchlistItemIn } from "@/services/watchlistService"; 
 import { useKeycloak } from "@react-keycloak/web"; 
+import { useTheme } from 'next-themes';
 
 interface Recommendation {
   id: number;
@@ -21,6 +22,7 @@ interface Preferences {
 
 export default function SmashFlix() {
   const { keycloak, initialized } = useKeycloak();
+  const { theme } = useTheme();
   const [step, setStep] = useState(1);
   const [preferences, setPreferences] = useState<Preferences>({
     platforms: [],
@@ -40,6 +42,11 @@ export default function SmashFlix() {
   const ANIMATION_DURATION = 300; 
   const [showDetailsWarning, setShowDetailsWarning] = useState(false);
   const [itemForDetails, setItemForDetails] = useState<Recommendation | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchPlatforms = async () => {
@@ -209,38 +216,57 @@ export default function SmashFlix() {
   const confirmShowDetails = () => {
     setShowDetailsWarning(false);
     if (itemForDetails && preferences.category) {
-      //router.push(`/explore/${itemForDetails.id}?mediaType=${preferences.category}`);
       window.open(`/explore/${itemForDetails.id}?mediaType=${preferences.category}`, '_blank');
     }
   };
 
+  if (!mounted) return null;
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 my-8 transition-all duration-300 hover:shadow-2xl min-h-[500px]">
-      <h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-pink-500 to-rose-500 text-transparent bg-clip-text">SmashFlix</h2>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 md:p-8 my-8 transition-all duration-300 hover:shadow-2xl min-h-[500px] border border-gray-100 dark:border-gray-700">
+      <h2 className="text-3xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500">SmashFlix</h2>
 
       {error && !loading && (
-        <p className="text-red-500 text-center mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 rounded">{error}</p>
+        <p className="text-red-500 text-center mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded">
+          {error}
+        </p>
       )}
 
       {step === 1 && (
         <div>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1 text-center">Krok 1: Wybierz platformy</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Możesz wybrać wiele.</p>
-          {loadingPlatforms && <p className="text-center py-4">Ładowanie platform...</p>}
+          
+          {loadingPlatforms && (
+            <div className="flex justify-center py-8">
+              <div className="h-8 w-8 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full animate-spin"></div>
+            </div>
+          )}
+          
           {!loadingPlatforms && allAvailablePlatforms.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6 max-h-60 overflow-y-auto p-2 border rounded-md dark:border-gray-700">
               {allAvailablePlatforms.map((platform) => (
-                <button key={platform.provider_id} onClick={() => handlePlatformToggle(platform.provider_id)} className={`p-3 rounded-lg shadow text-sm transition-all transform hover:scale-105 flex items-center justify-center space-x-2 ${preferences.platforms.includes(platform.provider_id) ? "bg-sky-600 text-white ring-2 ring-sky-400" : "bg-sky-500 hover:bg-sky-600 text-white" }`} >
-                  {platform.logo_path && <img src={`https://image.tmdb.org/t/p/w92${platform.logo_path}`} alt={platform.provider_name} className="h-5 w-5 object-contain" />} 
+                <button 
+                  key={platform.provider_id} 
+                  onClick={() => handlePlatformToggle(platform.provider_id)} className={`p-3 rounded-lg shadow text-sm transition-all transform hover:scale-105 flex items-center justify-center space-x-2 ${preferences.platforms.includes(platform.provider_id) ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white ring-2 ring-sky-400"  : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"}`}>
+                  {platform.logo_path && (
+                    <img 
+                      src={`https://image.tmdb.org/t/p/w92${platform.logo_path}`} 
+                      alt={platform.provider_name} 
+                      className="h-5 w-5 object-contain"
+                    />
+                  )} 
                   <span>{platform.provider_name}</span>
                 </button>
               ))}
             </div>
           )}
+          
           {!loadingPlatforms && allAvailablePlatforms.length === 0 && !error && (
             <p className="text-center py-4 text-gray-500 dark:text-gray-400">Nie znaleziono dostępnych platform.</p>
           )}
-          <button onClick={() => setStep(2)} disabled={preferences.platforms.length === 0 || loadingPlatforms} className="w-full mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition disabled:bg-gray-400 dark:disabled:bg-gray-600">
+          
+          <button onClick={() => setStep(2)} disabled={preferences.platforms.length === 0 || loadingPlatforms}  className="w-full mt-4 px-6 py-3 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-700 dark:disabled:to-gray-800">
             Dalej
           </button>
         </div>
@@ -249,40 +275,59 @@ export default function SmashFlix() {
       {step === 2 && (
         <div>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 text-center">Krok 2: Wybierz kategorię</h3>
+          
           <div className="flex justify-center gap-4 mb-6">
-            <button onClick={() => handleCategorySelect("movie")} className={`px-8 py-4 rounded-lg shadow transition-transform transform hover:scale-105 text-lg ${preferences.category === "movie" ? "bg-teal-600 text-white ring-2 ring-teal-400" : "bg-teal-500 hover:bg-teal-600 text-white"}`}> Film </button>
-            <button onClick={() => handleCategorySelect("tv")} className={`px-8 py-4 rounded-lg shadow transition-transform transform hover:scale-105 text-lg ${preferences.category === "tv" ? "bg-amber-600 text-white ring-2 ring-amber-400" : "bg-amber-500 hover:bg-amber-600 text-white"}`} > Serial </button>
+            <button onClick={() => handleCategorySelect("movie")}  className={`px-8 py-4 rounded-lg shadow transition-transform transform hover:scale-105 text-lg ${ preferences.category === "movie"  ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white ring-2 ring-sky-400" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"}`}>Film</button>    
+            <button onClick={() => handleCategorySelect("tv")} className={`px-8 py-4 rounded-lg shadow transition-transform transform hover:scale-105 text-lg ${ preferences.category === "tv"  ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white ring-2 ring-sky-400" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"}`}>Serial</button>
           </div>
+          
           <button onClick={() => setStep(1)} className="mt-6 block mx-auto text-sm text-gray-600 dark:text-gray-400 hover:underline">Wróć do platform</button>
         </div>
       )}
 
       {step === 3 && preferences.category && (
         <div>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1 text-center">Krok 3: Wybierz gatunki ({preferences.category === "movie" ? "Film" : "Serial"})</h3>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-1 text-center">
+            Krok 3: Wybierz gatunki ({preferences.category === "movie" ? "Film" : "Serial"})
+          </h3>
+          
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Możesz wybrać wiele.</p>
-          {loadingGenres && <p className="text-center py-4">Ładowanie gatunków...</p>}
+          
+          {loadingGenres && (
+            <div className="flex justify-center py-8">
+              <div className="h-8 w-8 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full animate-spin"></div>
+            </div>
+          )}
+          
           {!loadingGenres && currentAvailableGenres.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6 max-h-60 overflow-y-auto p-2 border rounded-md dark:border-gray-700">
               {currentAvailableGenres.map((genre) => (
-                <button key={genre.id} onClick={() => handleGenreToggle(genre.id)} className={`p-3 rounded-lg shadow text-sm transition-all transform hover:scale-105 ${preferences.genres.includes(genre.id) ? "bg-indigo-600 text-white ring-2 ring-indigo-400" : "bg-indigo-500 hover:bg-indigo-600 text-white"}`}>
+                <button key={genre.id} onClick={() => handleGenreToggle(genre.id)} className={`p-3 rounded-lg shadow text-sm transition-all transform hover:scale-105 ${preferences.genres.includes(genre.id) ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white ring-2 ring-sky-400" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"}`}>
                   {genre.name}
                 </button>
               ))}
             </div>
           )}
-           {!loadingGenres && currentAvailableGenres.length === 0 && !error && (
-            <p className="text-center py-4 text-gray-500 dark:text-gray-400">Nie znaleziono gatunków dla wybranej kategorii.</p>
+          
+          {!loadingGenres && currentAvailableGenres.length === 0 && !error && (
+            <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+              Nie znaleziono gatunków dla wybranej kategorii.
+            </p>
           )}
-          <button onClick={fetchRecommendations} disabled={preferences.genres.length === 0 || loadingGenres || loading} className="w-full mt-4 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-md transition disabled:bg-gray-400 dark:disabled:bg-gray-600">
+          
+          <button onClick={fetchRecommendations} disabled={preferences.genres.length === 0 || loadingGenres || loading}  className="w-full mt-4 px-6 py-3 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-700 dark:disabled:to-gray-800">
             {loading ? "Szukam..." : "Pokaż pasujące"}
           </button>
+          
           <button onClick={() => setStep(2)} className="mt-6 block mx-auto text-sm text-gray-600 dark:text-gray-400 hover:underline">Wróć do kategorii</button>
         </div>
       )}
 
       {step === 4 && loading && (
-        <p className="text-center text-gray-600 dark:text-gray-300 py-8">Ładowanie rekomendacji...</p>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="h-12 w-12 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-center text-gray-600 dark:text-gray-300">Ładowanie rekomendacji...</p>
+        </div>
       )}
 
       {step === 4 && !loading && recommendations.length > 0 && (
@@ -327,59 +372,69 @@ export default function SmashFlix() {
                   <div className="relative p-4 text-white z-10">
                     <h3 className="text-xl sm:text-2xl font-bold mb-1 drop-shadow-lg">{rec.title}</h3>
                     <p className="text-xs sm:text-sm text-gray-200 line-clamp-3 drop-shadow-md">{rec.overview}</p>
-                    <button onClick={() => handleShowDetails(rec)} className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded shadow" >Szczegóły</button>
+                    <button onClick={() => handleShowDetails(rec)} className="mt-2 text-xs bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white py-1 px-2 rounded shadow transition-all duration-300 transform hover:scale-105">
+                      Szczegóły
+                    </button>
                   </div>
                 </div>
               );
             })}
 
             {(currentIndex >= recommendations.length || !recommendations[currentIndex]?.poster_path) && recommendations[currentIndex] && (
-                 <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-slate-700">
-                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{recommendations[currentIndex].title}</h3>
-                    <p className="text-sm text-gray-300 mb-4 line-clamp-6">{recommendations[currentIndex].overview}</p>
-                    <p className="text-xs text-gray-400">(Brak plakatu)</p>
-                 </div>
+              <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-gray-700">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                  {recommendations[currentIndex].title}
+                </h3>
+                <p className="text-sm text-gray-300 mb-4 line-clamp-6">
+                  {recommendations[currentIndex].overview}
+                </p>
+                <p className="text-xs text-gray-400">(Brak plakatu)</p>
+              </div>
             )}
           </div>
 
           {currentIndex < recommendations.length && (
             <div className="flex justify-center gap-4 sm:gap-6 mt-6">
-              <button onClick={() => handleSwipe("left")}
-                disabled={swipeAnimation.active || currentIndex >= recommendations.length}
-                className="px-6 py-3 sm:px-8 sm:py-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg text-lg sm:text-xl font-semibold transition-transform transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">Odrzuć</button>
-              <button
-                onClick={() => handleSwipe("right")}
-                disabled={swipeAnimation.active || currentIndex >= recommendations.length}
-                className="px-6 py-3 sm:px-8 sm:py-3 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg text-lg sm:text-xl font-semibold transition-transform transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">Lubię!</button>
+              <button onClick={() => handleSwipe("left")} disabled={swipeAnimation.active || currentIndex >= recommendations.length} className="px-6 py-3 sm:px-8 sm:py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-full shadow-lg text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-700 dark:disabled:to-gray-800">
+                Odrzuć
+              </button>
+              
+              <button onClick={() => handleSwipe("right")} disabled={swipeAnimation.active || currentIndex >= recommendations.length} className="px-6 py-3 sm:px-8 sm:py-3 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white rounded-full shadow-lg text-lg sm:text-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-700 dark:disabled:to-gray-800">
+                Lubię!
+              </button>
             </div>
           )}
-          <button onClick={resetPreferencesAndStartOver} className="mt-8 text-sm text-blue-500 dark:text-blue-400 hover:underline">Zacznij od nowa z innymi kryteriami</button>
+          
+          <button onClick={resetPreferencesAndStartOver} className="mt-8 text-sm text-sky-500 dark:text-sky-400 hover:underline">
+            Zacznij od nowa z innymi kryteriami
+          </button>
         </div>
       )}
       
       {showDetailsWarning && itemForDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md border border-gray-200 dark:border-gray-700">
             <h4 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Uwaga!</h4>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Przejście do szczegółów zakończy Twoją obecną sesję w Filmowym Tinderze.
-              Czy chcesz kontynuować i zobaczyć szczegóły dla "{itemForDetails.title}"?
-            </p>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">Czy chcesz kontynuować i zobaczyć szczegóły dla "{itemForDetails.title}"?</p>
             <div className="flex justify-center gap-4">
-              <button onClick={() => setShowDetailsWarning(false)} className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md transition">Anuluj</button>
-              <button onClick={confirmShowDetails} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">Pokaż szczegóły</button>
+              <button onClick={() => setShowDetailsWarning(false)} className="px-6 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md transition-colors">
+                Anuluj
+              </button>
+              <button onClick={confirmShowDetails} className="px-6 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white rounded-md transition-all duration-300 shadow-md">
+                Pokaż szczegóły
+              </button>
             </div>
           </div>
         </div>
       )}
  
       {step === 4 && !loading && recommendations.length === 0 && !error && (
-         <div className="text-center py-8">
-            <p className="text-gray-600 dark:text-gray-300 mb-4">Nie znaleziono rekomendacji dla wybranych kryteriów.</p>
-            <button onClick={resetPreferencesAndStartOver} className="text-blue-500 hover:underline">
-              Spróbuj wybrać inne preferencje
-            </button>
-         </div>
+        <div className="text-center py-8">
+          <p className="text-gray-600 dark:text-gray-300 mb-4">Nie znaleziono rekomendacji dla wybranych kryteriów.</p>
+          <button onClick={resetPreferencesAndStartOver} className="text-sky-500 dark:text-sky-400 hover:underline">
+            Spróbuj wybrać inne preferencje
+          </button>
+        </div>
       )}
     </div>
   );

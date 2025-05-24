@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import '@/app/globals.css';
 
 import KeycloakProvider from "@/app/context/keycloakProvider";
-import { ThemeProvider } from "@/app/context/themeProvider";
+import { ThemeProvider } from "next-themes";
 import { Navigation } from "@/components/navigation";
 import { Inter } from 'next/font/google';
 
@@ -15,14 +15,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
   return (
-    <html lang="pl">
+    <html lang="pl" suppressHydrationWarning>
       <body className={inter.className}>
         <KeycloakProvider>
-          <ThemeProvider>
-            <Navigation />
-            <main className="container mx-auto p-4">
-              {children}
-            </main>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <div className="min-h-screen text-gray-900 dark:text-gray-100 transition-colors duration-300">
+              <Navigation />
+              <main className="flex flex-col min-h-screen">
+                {children}
+              </main>
+            </div>
           </ThemeProvider>
         </KeycloakProvider>
       </body>
