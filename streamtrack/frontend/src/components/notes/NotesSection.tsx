@@ -187,7 +187,7 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
   const sectionTitle = mediaId && title ? `Notatki dla: ${title}` : "Moje Notatki";
 
   return (
-    <div className="mt-8 p-4 bg-gray-700 rounded-lg shadow-md relative">
+    <div className="mt-1 p-4 rounded-lg shadow-md relative">
       {showSimpleAlert && alertMessage && (
         <SimpleAlert
           message={alertMessage}

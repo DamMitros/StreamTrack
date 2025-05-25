@@ -201,3 +201,159 @@ async def get_media_details(media_type: str, media_id: str, language: str = "pl-
             error_detail = response.json().get("status_message", "Error fetching data from TMDB") if response.content else "Error fetching data from TMDB"
             raise HTTPException(status_code=response.status_code, detail=error_detail)
         return response.json()
+
+@router.get("/movie/{movie_id}/reviews")
+async def get_movie_reviews(movie_id: str, language: str = "en-US", page: int = 1):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/movie/{movie_id}/reviews",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": language,
+                "page": page,
+            },
+        )
+        if response.status_code != 200:
+            return {"results": [], "total_results": 0}
+        return response.json()
+
+@router.get("/tv/{tv_id}/reviews")
+async def get_tv_reviews(tv_id: str, language: str = "en-US", page: int = 1):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/tv/{tv_id}/reviews",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": language,
+                "page": page,
+            },
+        )
+        if response.status_code != 200:
+            return {"results": [], "total_results": 0}
+        return response.json()
+
+@router.get("/movie/{movie_id}/credits")
+async def get_movie_credits(movie_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/movie/{movie_id}/credits",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+            },
+        )
+        if response.status_code != 200:
+            return {"cast": [], "crew": []}
+        return response.json()
+
+@router.get("/tv/{tv_id}/credits")
+async def get_tv_credits(tv_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/tv/{tv_id}/credits",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+            },
+        )
+        if response.status_code != 200:
+            return {"cast": [], "crew": []}
+        return response.json()
+
+@router.get("/movie/{movie_id}/similar")
+async def get_similar_movies(movie_id: str, page: int = 1):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/movie/{movie_id}/similar",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+                "page": page,
+            },
+        )
+        if response.status_code != 200:
+            return {"results": []}
+        return response.json()
+
+@router.get("/tv/{tv_id}/similar")
+async def get_similar_tv(tv_id: str, page: int = 1):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/tv/{tv_id}/similar",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+                "page": page,
+            },
+        )
+        if response.status_code != 200:
+            return {"results": []}
+        return response.json()
+
+@router.get("/movie/{movie_id}/videos")
+async def get_movie_videos(movie_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/movie/{movie_id}/videos",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+            },
+        )
+        if response.status_code != 200:
+            return {"results": []}
+        return response.json()
+
+@router.get("/tv/{tv_id}/videos")
+async def get_tv_videos(tv_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/tv/{tv_id}/videos",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+            },
+        )
+        if response.status_code != 200:
+            return {"results": []}
+        return response.json()
+
+@router.get("/movie/{movie_id}/external_ids")
+async def get_movie_external_ids(movie_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/movie/{movie_id}/external_ids",
+            params={
+                "api_key": TMDB_API_KEY,
+            },
+        )
+        if response.status_code != 200:
+            return {}
+        return response.json()
+
+@router.get("/tv/{tv_id}/external_ids")
+async def get_tv_external_ids(tv_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/tv/{tv_id}/external_ids",
+            params={
+                "api_key": TMDB_API_KEY,
+            },
+        )
+        if response.status_code != 200:
+            return {}
+        return response.json()
+
+@router.get("/tv/{tv_id}")
+async def get_tv_details(tv_id: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{TMDB_API_URL}/tv/{tv_id}",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "pl-PL",
+            },
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Error fetching TV details from TMDB")
+        return response.json()

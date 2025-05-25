@@ -5,7 +5,6 @@ import { getMovieProviders, getTvProviders, getMovieGenres, getTvGenres,
   discoverMovies, discoverTv, Provider, Genre } from "@/services/tmdbService";
 import { addToWatchlist, WatchlistItemIn } from "@/services/watchlistService"; 
 import { useKeycloak } from "@react-keycloak/web"; 
-import { useTheme } from 'next-themes';
 
 interface Recommendation {
   id: number;
@@ -22,7 +21,6 @@ interface Preferences {
 
 export default function SmashFlix() {
   const { keycloak, initialized } = useKeycloak();
-  const { theme } = useTheme();
   const [step, setStep] = useState(1);
   const [preferences, setPreferences] = useState<Preferences>({
     platforms: [],

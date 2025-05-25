@@ -1,15 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  discoverMovies, discoverTv, searchMultiTMDB, getMovieGenres, 
-  getTvGenres, getMovieProviders, getTvProviders,getItemWatchProviders, 
-} from '@/services/tmdbService';
-
+import { useRouter } from 'next/navigation';
+import { discoverMovies, discoverTv, searchMultiTMDB, getMovieGenres, 
+  getTvGenres, getMovieProviders, getTvProviders,getItemWatchProviders } from '@/services/tmdbService';
 import { MediaTypeSwitcher } from '@/components/explore/MediaTypeSwitcher';
 import { SearchControls } from '@/components/explore/SearchControls';
 import { FilterGroup } from '@/components/explore/FilterGroup';
-import { SortDropdown } from '@/components/explore/SortDropdown';
 import { ResultsDisplay } from '@/components/explore/ResultsDisplay';
 import { PaginationControls } from '@/components/explore/PaginationControls';
 
@@ -33,6 +30,8 @@ const tvSortOptions = [
 
 
 const ExplorePage = () => {
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,13 +46,15 @@ const ExplorePage = () => {
   const [rawResultsFromApi, setRawResultsFromApi] = useState([]);
   const [resultsWithProviders, setResultsWithProviders] = useState([]);
   const [displayedResults, setDisplayedResults] = useState([]);
+  const [filtersVisible, setFiltersVisible] = useState(true);
+  const [viewMode, setViewMode] = useState('grid'); 
 
-  const mapPlatformDataToFilterItem = (platform) => ({
+  const mapPlatformDataToFilterItem = useCallback((platform) => ({
     id: platform.provider_id,
     name: platform.provider_name,
     logo_path: platform.logo_path,
     display_priority: platform.display_priority, 
-  });
+  }), []);
 
   const fetchFilterDropdownOptions = useCallback(async () => {
     setLoading(true); 
@@ -105,21 +106,7 @@ const ExplorePage = () => {
     } finally {
       setLoading(false); 
     }
-  }, [selectedMediaType]);
-
-  useEffect(() => {
-    fetchFilterDropdownOptions();
-    setSelectedGenres([]); 
-    setSelectedPlatforms([]);
-    setSelectedSortBy("popularity.desc"); 
-  }, [selectedMediaType, fetchFilterDropdownOptions]);
-
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      handleApiSearch(1); 
-    }
-  }, [selectedGenres, selectedPlatforms, selectedSortBy]); 
-
+  }, [selectedMediaType, mapPlatformDataToFilterItem]);
 
   const handleApiSearch = useCallback(async (page = 1) => {
     setLoading(true);
@@ -197,6 +184,59 @@ const ExplorePage = () => {
       setLoading(false); 
     }
   }, [searchTerm, selectedMediaType, selectedGenres, selectedPlatforms, selectedSortBy]); 
+
+  const handleSubmitOrFilter = useCallback((event) => {
+    if (event) event.preventDefault();
+    handleApiSearch(1); 
+  }, [handleApiSearch]);
+
+  const handleMediaTypeSelect = useCallback((type) => { 
+    setSelectedMediaType(type);
+  }, []); 
+
+  const handleGenreChange = useCallback((genreId) => { 
+    setSelectedGenres(prev => {
+      const newGenres = prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId];
+      return newGenres;
+    });
+  }, []);
+
+  const handlePlatformChange = useCallback((platformId) => { 
+    setSelectedPlatforms(prev => {
+      const newPlatforms = prev.includes(platformId) ? prev.filter(id => id !== platformId) : [...prev, platformId];
+      return newPlatforms;
+    });
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    fetchFilterDropdownOptions();
+    setSelectedGenres([]); 
+    setSelectedPlatforms([]);
+    setSelectedSortBy("popularity.desc"); 
+    setCurrentPage(1);
+  }, [selectedMediaType, fetchFilterDropdownOptions]);
+
+  useEffect(() => {
+    if (mounted && !searchTerm.trim()) {
+      handleApiSearch(1);
+    }
+  }, [mounted, handleApiSearch, searchTerm]);
+
+  useEffect(() => {
+    if (mounted) {
+      handleApiSearch(1);
+    }
+  }, [mounted, selectedMediaType, handleApiSearch]);
+
+  useEffect(() => {
+    if (mounted && !searchTerm.trim()) {
+      handleApiSearch(1); 
+    }
+  }, [mounted, selectedGenres, selectedPlatforms, selectedSortBy, handleApiSearch, searchTerm]); 
 
   useEffect(() => {
     const fetchProvidersForItems = async () => {
@@ -281,144 +321,220 @@ const ExplorePage = () => {
       });
     }
     setDisplayedResults(finalFilteredResults);
-  }, [resultsWithProviders, selectedGenres, selectedPlatforms, genresForFilter, searchTerm, selectedMediaType, loading]);
+  }, [resultsWithProviders, selectedGenres, selectedPlatforms, genresForFilter, searchTerm, selectedMediaType, loading]); 
 
-
-  const handleSubmitOrFilter = (event) => {
-    if (event) event.preventDefault();
-    handleApiSearch(1); 
-  };
-  
-  useEffect(() => { 
-    if(!searchTerm.trim()){
-      handleApiSearch(1);
-    }
-  }, [selectedMediaType]); 
-
-  const handleMediaTypeSelect = (type) => { 
-    setSelectedMediaType(type);
-  };
-
-  const handleGenreChange = (genreId) => { 
-    setSelectedGenres(prev => {
-      const newGenres = prev.includes(genreId) ? prev.filter(id => id !== genreId) : [...prev, genreId];
-      return newGenres;
-    });
-  };
-
-  const handlePlatformChange = (platformId) => { 
-    setSelectedPlatforms(prev => {
-      const newPlatforms = prev.includes(platformId) ? prev.filter(id => id !== platformId) : [...prev, platformId];
-      return newPlatforms;
-    });
-  };
+  if (!mounted) return null;
 
   const currentSortOptions = selectedMediaType === "movie" ? movieSortOptions : tvSortOptions;
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4 sm:px-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 drop-shadow-lg mb-2 tracking-tight">Katalog Mediów</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300">Odkrywaj filmy i seriale na różnych platformach streamingowych!</p>
-      </div>
+    <div className="relative min-h-screen">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950 transition-all duration-500"></div>
 
-      <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
-        <div className="flex-1">
-          <MediaTypeSwitcher
-            selectedMediaType={selectedMediaType}
-            onSelectMediaType={handleMediaTypeSelect}
-          />
-        </div>
-        <div className="flex-1">
-          <SearchControls
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-            onSubmit={handleSubmitOrFilter}
-            onApplyFilters={() => handleApiSearch(1)} 
-            loading={loading}
-            placeholder={`Wyszukaj ${selectedMediaType === "movie" ? "filmy" : selectedMediaType === "tv" ? "seriale" : "filmy i seriale"}...`}
-            showApplyFiltersButton={!searchTerm.trim()}
-          />
-        </div>
-      </div>
+      <div className="relative z-10 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="relative group mb-6">
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 group-hover:from-pink-500 group-hover:via-purple-500 group-hover:to-sky-400 transition-all duration-700">Eksploruj</span>
+                <span className="ml-2 inline-block w-3 h-3 bg-gradient-to-r from-sky-400 to-purple-500 rounded-full animate-pulse"></span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mt-4 leading-relaxed">
+                Odkrywaj <span className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-indigo-500">filmy</span> i{" "}
+                <span className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500">seriale</span>{" "}
+                na różnych platformach streamingowych!
+              </p>
+            </div>
+          </div>
 
-      <div className="flex flex-wrap gap-6 mb-8">
-        {((selectedMediaType === "movie" || selectedMediaType === "tv") || (searchTerm.trim() && selectedMediaType !== "all")) && genresForFilter.length > 0 && (
-          <div className="flex-1 min-w-[220px]">
-            <FilterGroup
-              label="Kategorie"
-              items={genresForFilter}
-              selectedItems={selectedGenres}
-              onItemChange={handleGenreChange}
+          <div className="space-y-8 mb-8">
+            <div>
+              <MediaTypeSwitcher
+                selectedMediaType={selectedMediaType}
+                onSelectMediaType={handleMediaTypeSelect}
+              />
+            </div>
+
+            <div>
+              <SearchControls
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                onSubmit={handleSubmitOrFilter}
+                onApplyFilters={() => handleApiSearch(1)} 
+                loading={loading}
+                placeholder={`Wyszukaj ${selectedMediaType === "movie" ? "filmy" : selectedMediaType === "tv" ? "seriale" : "filmy i seriale"}...`}
+                showApplyFiltersButton={!searchTerm.trim()}
+              />
+            </div>
+
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-6 max-w-6xl mx-auto">
+              {(selectedMediaType === "movie" || selectedMediaType === "tv") && !searchTerm.trim() && (
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Sortuj według:</span>
+                  <div className="relative min-w-[200px]">
+                    <select
+                      value={selectedSortBy}
+                      onChange={(e) => setSelectedSortBy(e.target.value)}
+                      disabled={loading}
+                      className="block w-full px-4 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-medium"
+                    >
+                      {currentSortOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value} className="bg-white dark:bg-gray-800">
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 flex-1 lg:flex-initial">
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setFiltersVisible(!filtersVisible)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-white/90 dark:hover:bg-gray-800/90 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
+                    <FilterIcon className={`transition-transform duration-200 ${filtersVisible ? 'rotate-180' : ''}`} />
+                    {filtersVisible ? 'Ukryj filtry' : 'Pokaż filtry'}
+                  </button>
+                  
+                  {searchTerm.trim() && (
+                    <div className="text-sm text-blue-600 dark:text-blue-300 italic bg-blue-50/50 dark:bg-blue-900/20 px-3 py-1 rounded-lg">Filtry stosowane po załadowaniu wyników</div>
+                  )}
+                  
+                  {selectedMediaType === "all" && !searchTerm.trim() && (
+                    <div className="text-sm text-purple-600 dark:text-purple-300 italic bg-purple-50/50 dark:bg-purple-900/20 px-3 py-1 rounded-lg">Tryb "Wszystko" - filtrowanie po gatunkach wyłączone</div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Widok:</span>
+                  <div className="flex bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border-2 border-gray-200/50 dark:border-gray-700/50 p-1 shadow-lg">
+                    <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid'? 'bg-sky-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200' }`}>
+                      <GridIcon />
+                    </button>
+                    <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list'? 'bg-sky-500 text-white shadow-md': 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}>
+                      <ListIcon />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {filtersVisible && (
+              <div className="max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl border-2 border-gray-200/50 dark:border-gray-700/50 shadow-xl transition-all duration-300">
+                  {((selectedMediaType === "movie" || selectedMediaType === "tv") || (searchTerm.trim() && selectedMediaType !== "all")) && genresForFilter.length > 0 && (
+                    <FilterGroup
+                      label="Kategorie"
+                      items={genresForFilter}
+                      selectedItems={selectedGenres}
+                      onItemChange={handleGenreChange}
+                      loading={loading} 
+                      itemType="genre"
+                    />
+                  )}
+                  
+                  {((selectedMediaType === "movie" || selectedMediaType === "tv" || (selectedMediaType === "all" && !searchTerm.trim())) || (searchTerm.trim() && selectedMediaType !== "all")) && platformsForFilter.length > 0 && (
+                    <FilterGroup
+                      label="Platformy"
+                      items={platformsForFilter}
+                      selectedItems={selectedPlatforms}
+                      onItemChange={handlePlatformChange}
+                      loading={loading} 
+                      itemType="platform"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-sky-400/5 via-purple-500/5 to-pink-500/5 dark:from-sky-400/5 dark:via-purple-500/5 dark:to-pink-500/5 rounded-2xl blur-xl"></div>
+            <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 min-h-[400px] p-6">
+              {loading && (
+                <div className="flex flex-col justify-center items-center h-96">
+                  <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin mb-4"></div>
+                  <p className="text-xl text-gray-600 dark:text-gray-400">Ładowanie wyników...</p>
+                </div>
+              )}
+              
+              {!loading && error && (
+                <div className="flex flex-col justify-center items-center h-96">
+                  <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-xl text-red-600 dark:text-red-400">Błąd: {error}</p>
+                </div>
+              )}
+              
+              {!loading && !error && (
+                <ResultsDisplay results={displayedResults} viewMode={viewMode} />
+              )}
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handleApiSearch}
               loading={loading} 
-              itemType="genre"
             />
           </div>
-        )}
-        {((selectedMediaType === "movie" || selectedMediaType === "tv" || (selectedMediaType === "all" && !searchTerm.trim())) || (searchTerm.trim() && selectedMediaType !== "all")) && platformsForFilter.length > 0 && (
-          <div className="flex-1 min-w-[220px]">
-            <FilterGroup
-              label="Platformy"
-              items={platformsForFilter}
-              selectedItems={selectedPlatforms}
-              onItemChange={handlePlatformChange}
-              loading={loading} 
-              itemType="platform"
-            />
+
+          {!loading && !error && displayedResults.length === 0 && (searchTerm.trim() || selectedGenres.length > 0 || selectedPlatforms.length > 0) && (
+            <div className="text-center mt-8 p-8 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl">
+              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <p className="text-lg text-gray-500 dark:text-gray-400">Brak wyników dla podanych kryteriów</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Spróbuj zmienić filtry lub wyszukiwane hasło</p>
+            </div>
+          )}
+
+          <div className="flex justify-center mt-12">
+            <button onClick={() => router.push('/')} className="inline-flex items-center gap-2 px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-800/80">
+              <BackIcon />
+              Powrót do strony głównej
+            </button>
           </div>
-        )}
-        {(selectedMediaType === "movie" || selectedMediaType === "tv") && !searchTerm.trim() && (
-          <div className="flex-1 min-w-[180px]">
-            <SortDropdown
-              options={currentSortOptions}
-              selectedValue={selectedSortBy}
-              onValueChange={setSelectedSortBy}
-              loading={loading}
-            />
-          </div>
-        )}
+        </div>
       </div>
-
-      {searchTerm.trim() && (
-        <p className="mb-4 text-sm text-blue-600 dark:text-blue-300 italic">
-          Przy wyszukiwaniu tekstem, filtrowanie po platformie odbywa się po załadowaniu listy. Sortowanie jest domyślne dla wyszukiwarki. Filtrowanie po kategorii jest stosowane po stronie klienta.
-        </p>
-      )}
-      {selectedMediaType === "all" && !searchTerm.trim() && (
-        <p className="mb-4 text-sm text-purple-600 dark:text-purple-300 italic">
-          W trybie "Wszystko" bez wyszukiwania: filtrowanie po kategorii jest wyłączone. Możesz filtrować po platformach. Wyświetlane są popularne pozycje.
-        </p>
-      )}
-
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 mb-8 min-h-[200px]"> 
-        {loading && (
-          <div className="flex justify-center items-center h-full">
-            <p className="text-xl text-gray-500">Ładowanie wyników...</p>
-          </div>
-        )}
-        {!loading && error && (
-          <div className="flex justify-center items-center h-full">
-            <p className="text-xl text-red-500">Błąd: {error}</p>
-          </div>
-        )}
-        {!loading && !error && <ResultsDisplay results={displayedResults} />}
-      </div>
-
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handleApiSearch}
-        loading={loading} 
-      />
-
-      {!loading && !error && displayedResults.length === 0 && (searchTerm.trim() || selectedGenres.length > 0 || selectedPlatforms.length > 0) && (
-        <p className="text-center text-gray-500 mt-8">Brak wyników dla podanych kryteriów.</p>
-      )}
-      {!loading && !error && displayedResults.length === 0 && !searchTerm.trim() && selectedGenres.length === 0 && selectedPlatforms.length === 0 && (
-        <p className="text-center text-gray-400 mt-8">Wyszukaj lub wybierz filtry, aby zobaczyć wyniki.</p>
-      )}
     </div>
   );
 };
+
+const FilterIcon = ({ className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 ${className}`}>
+    <path fillRule="evenodd" d="M3.792 2.938A49.069 49.069 0 0112 2.25c2.797 0 5.54.236 8.208.688a1.424 1.424 0 011.792 1.386v4.132a3 3 0 01-.879 2.121l-7.26 7.26a2.25 2.25 0 01-1.591.659H8.617a1.5 1.5 0 01-1.06-.44L2.439 12.939A1.5 1.5 0 012.25 11.69V8.558a1.424 1.424 0 011.792-1.386c.853-.09 1.708-.162 2.565-.214l.186-.014z" clipRule="evenodd" />
+  </svg>
+);
+
+const GridIcon = ({ className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 ${className}`}>
+    <path fillRule="evenodd" d="M3 6a3 3 0 013-3h2.25a3 3 0 013 3v2.25a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm9.75 0a3 3 0 013-3H18a3 3 0 013 3v2.25a3 3 0 01-3 3h-2.25a3 3 0 01-3-3V6zM3 15.75a3 3 0 013-3h2.25a3 3 0 013 3V18a3 3 0 01-3 3H6a3 3 0 01-3-3v-2.25zm9.75 0a3 3 0 013-3H18a3 3 0 013 3V18a3 3 0 01-3 3h-2.25a3 3 0 01-3-3v-2.25z" clipRule="evenodd" />
+  </svg>
+);
+
+const ListIcon = ({ className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 ${className}`}>
+    <path fillRule="evenodd" d="M2.625 6.75a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875 0A.75.75 0 018.25 6h12a.75.75 0 010 1.5h-12a.75.75 0 01-.75-.75zM2.625 12a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zM7.5 12a.75.75 0 01.75-.75h12a.75.75 0 010 1.5h-12A.75.75 0 017.5 12zm-4.875 5.25a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875 0a.75.75 0 01.75-.75h12a.75.75 0 010 1.5h-12a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+  </svg>
+);
+
+const BackIcon = ({ className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-5 h-5 ${className}`}>
+    <path fillRule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clipRule="evenodd" />
+  </svg>
+);
 
 export default ExplorePage;

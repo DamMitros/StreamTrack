@@ -246,21 +246,54 @@ export const getTMDBDetails = async (mediaType: "movie" | "tv", id: string) => {
   if (!TMDB_PROXY_URL) {
     throw new Error("TMDB Proxy URL is not configured");
   }
-  if (mediaType !== "movie") {
-    console.warn(
-      `Fetching details for ${mediaType} is not fully supported by the current proxy.`
-    );
-  }
-  const response = await fetch(`${TMDB_PROXY_URL}/movie/${id}`);
+  
+  const endpoint = mediaType === "movie" ? `/movie/${id}` : `/tv/${id}`;
+  const response = await fetch(`${TMDB_PROXY_URL}${endpoint}`);
+  
   if (!response.ok) {
     const errorData = await response
       .json()
       .catch(() => ({ detail: "Network error" }));
     throw new Error(
-      `Error fetching movie details from TMDB: ${
+      `Error fetching ${mediaType} details from TMDB: ${
         errorData.detail || response.statusText
       }`
     );
   }
+  return response.json();
+};
+
+export const getMediaReviews = async (mediaType: "movie" | "tv", id: string, language = "en-US") => {
+  if (!TMDB_PROXY_URL) throw new Error("TMDB Proxy URL is not configured");
+  const response = await fetch(`${TMDB_PROXY_URL}/${mediaType}/${id}/reviews?language=${language}`);
+  if (!response.ok) return { results: [], total_results: 0 };
+  return response.json();
+};
+
+export const getMediaCredits = async (mediaType: "movie" | "tv", id: string) => {
+  if (!TMDB_PROXY_URL) throw new Error("TMDB Proxy URL is not configured");
+  const response = await fetch(`${TMDB_PROXY_URL}/${mediaType}/${id}/credits`);
+  if (!response.ok) return { cast: [], crew: [] };
+  return response.json();
+};
+
+export const getSimilarMedia = async (mediaType: "movie" | "tv", id: string) => {
+  if (!TMDB_PROXY_URL) throw new Error("TMDB Proxy URL is not configured");
+  const response = await fetch(`${TMDB_PROXY_URL}/${mediaType}/${id}/similar`);
+  if (!response.ok) return { results: [] };
+  return response.json();
+};
+
+export const getMediaVideos = async (mediaType: "movie" | "tv", id: string) => {
+  if (!TMDB_PROXY_URL) throw new Error("TMDB Proxy URL is not configured");
+  const response = await fetch(`${TMDB_PROXY_URL}/${mediaType}/${id}/videos`);
+  if (!response.ok) return { results: [] };
+  return response.json();
+};
+
+export const getMediaExternalIds = async (mediaType: "movie" | "tv", id: string) => {
+  if (!TMDB_PROXY_URL) throw new Error("TMDB Proxy URL is not configured");
+  const response = await fetch(`${TMDB_PROXY_URL}/${mediaType}/${id}/external_ids`);
+  if (!response.ok) return {};
   return response.json();
 };

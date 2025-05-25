@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import '@/app/globals.css';
 
 import KeycloakProvider from "@/app/context/keycloakProvider";
-import { ThemeProvider } from "next-themes";
 import { Navigation } from "@/components/navigation";
 import { Inter } from 'next/font/google';
 
@@ -18,14 +17,12 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
     <html lang="pl" suppressHydrationWarning>
       <body className={inter.className}>
         <KeycloakProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <div className="min-h-screen text-gray-900 dark:text-gray-100 transition-colors duration-300">
               <Navigation />
               <main className="flex flex-col min-h-screen">
                 {children}
               </main>
             </div>
-          </ThemeProvider>
         </KeycloakProvider>
       </body>
     </html>

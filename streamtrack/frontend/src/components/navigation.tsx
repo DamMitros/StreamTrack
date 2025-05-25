@@ -1,43 +1,24 @@
 "use client";
 
-import { useTheme } from 'next-themes';
 import { useKeycloak } from '@react-keycloak/web';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
 
 export const Navigation = () => {
-  const { theme, setTheme } = useTheme();
   const { keycloak, initialized } = useKeycloak();
   const router = useRouter();
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const isActive = (path: string) => pathname === path;
+  const isAdmin = initialized && keycloak.authenticated && keycloak.hasRealmRole('admin');  
 
   const handleLogout = () => {
     keycloak.logout({ redirectUri: window.location.origin });
   };
 
-  const isAdmin = initialized && keycloak.authenticated && keycloak.hasRealmRole('admin');  
-  const isActive = (path: string) => pathname === path;
-
   return (
-    <header className={`${scrolled ? 'py-2 backdrop-blur-md bg-slate-900/90' : 'py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900'}  text-slate-100 shadow-xl transition-all duration-300 sticky top-0 z-50 border-b border-slate-700/50`}>
+    <header className='py-2 backdrop-blur-md bg-slate-900/90 text-slate-100 shadow-xl transition-all duration-300 sticky top-0 z-50 border-b border-slate-700/50'>
       <div className="container mx-auto flex justify-between items-center px-4">
         <button onClick={() => router.push("/")}  className="text-2xl font-extrabold tracking-tighter flex items-center group">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 group-hover:from-pink-500 group-hover:via-purple-500 group-hover:to-sky-400 transition-all duration-500">
-            Streamtrack
-          </span>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-purple-500 to-pink-500 group-hover:from-pink-500 group-hover:via-purple-500 group-hover:to-sky-400 transition-all duration-500"> Streamtrack</span>
           <span className="ml-1 bg-gradient-to-r from-sky-400 to-purple-500 h-2 w-2 rounded-full animate-pulse"></span>
         </button>
         
@@ -97,18 +78,23 @@ export const Navigation = () => {
             </button>
           )}
 
-          <button onClick={toggleTheme} className="relative p-2 rounded-full text-slate-300 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 hover:bg-slate-700/50 backdrop-blur-sm">
-            <span className="absolute inset-0 rounded-full bg-slate-700/30 scale-0 transition-transform duration-300 ease-out peer-hover:scale-100"></span>
-            {theme === "dark" ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-yellow-300">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-300">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-              </svg>
-            )}
-          </button>
+            <div className="hidden md:flex items-center justify-center w-8 h-8 group">
+              {keycloak.tokenParsed?.picture ? (
+                <img src={keycloak.tokenParsed.picture} alt="Zdjęcie profilowe" className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-600 group-hover:ring-purple-400 transition-all duration-300 cursor-pointer"
+                  onClick={() => router.push("/dashboard/user")}/>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 via-purple-500 to-pink-400 group-hover:from-pink-400 group-hover:via-purple-500 group-hover:to-sky-400 flex items-center justify-center text-white font-semibold text-sm transition-all duration-300 cursor-pointer ring-2 ring-slate-600 group-hover:ring-purple-400" onClick={() => router.push("/dashboard/user")}>
+                  {(() => {
+                    const name = keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username || "U";
+                    const nameParts = name.split(" ");
+                    if (nameParts.length >= 2) {
+                      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+                    }
+                    return name[0]?.toUpperCase() || "U";
+                  })()}
+                </div>
+              )}
+            </div>
 
           {initialized && !keycloak.authenticated ? (
             <button onClick={() => router.push("/login")} className="px-3 py-2 md:px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-lg shadow-green-500/20 hover:shadow-green-500/40">
