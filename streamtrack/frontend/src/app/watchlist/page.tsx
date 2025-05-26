@@ -124,12 +124,12 @@ const WatchlistPage = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Wymagane logowanie</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-8">Musisz być zalogowany, aby zobaczyć swoją listę do obejrzenia.</p>
-          <Link href="/login" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105">
+          <button onClick={() => keycloak.login()} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>
-            Przejdź do logowania
-          </Link>
+            Zaloguj się
+          </button>
         </div>
       </div>
     );

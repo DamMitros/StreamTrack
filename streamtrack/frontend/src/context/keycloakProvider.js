@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactKeycloakProvider } from "@react-keycloak/web";
+import { ReactKeycloakProvider, useKeycloak as useKeycloakBase } from "@react-keycloak/web";
 import keycloak from "@/utils/keycloak";
 
 const getInitOptions = () => ({
@@ -10,6 +10,10 @@ const getInitOptions = () => ({
   pkceMethod: "S256",
   flow: "standard",
 });
+
+export const useKeycloak = () => {
+  return useKeycloakBase();
+};
 
 export default function KeycloakProvider({ children }) {
   return (

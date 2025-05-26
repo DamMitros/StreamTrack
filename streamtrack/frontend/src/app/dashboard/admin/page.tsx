@@ -73,10 +73,17 @@ const AdminDashboardPage = () => {
             </div>
             
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Zarządzanie użytkownikami</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">Funkcje zarządzania użytkownikami będą dostępne wkrótce</p>
-              </div>
+              <button onClick={() => router.push("/dashboard/admin/users")} className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 hover:shadow-lg transition-all duration-300 text-left group">
+                <div className="flex items-center mb-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Zarządzanie użytkownikami</h3>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">Zarządzaj kontami użytkowników, nadawaj uprawnienia i kontroluj dostęp do systemu</p>
+              </button>
               
               <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Statystyki systemu</h3>

@@ -376,7 +376,7 @@ const ExplorePage = () => {
                       value={selectedSortBy}
                       onChange={(e) => setSelectedSortBy(e.target.value)}
                       disabled={loading}
-                      className="block w-full px-4 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-medium"
+                      className="block w-full px-4 pr-12 py-2 border-2 border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-medium"
                     >
                       {currentSortOptions.map((opt) => (
                         <option key={opt.value} value={opt.value} className="bg-white dark:bg-gray-800">

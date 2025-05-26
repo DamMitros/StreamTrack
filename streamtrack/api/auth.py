@@ -1,4 +1,5 @@
 from fastapi import Request, HTTPException, Depends
+from database import users_collection
 from jose import jwt, JWTError
 import httpx, os
 
@@ -33,10 +34,18 @@ async def get_current_user(request: Request):
   except Exception as e: 
     raise HTTPException(status_code=500, detail=f"Wewnętrzny błąd serwera podczas weryfikacji tokenu: {e}")
 
-
   user_id = payload.get("sub")
   if not user_id:
     raise HTTPException(status_code=401, detail="Token nie zawiera identyfikatora użytkownika (sub).")
+
+  try:
+    user = await users_collection.find_one({"keycloak_id": user_id})
+    if user and not user.get("is_active", True):
+      raise HTTPException(status_code=403, detail="Konto użytkownika zostało dezaktywowane.")
+  except HTTPException:
+    raise
+  except Exception as db_error:
+    print(f"Database error while checking user status: {db_error}")
 
   return {
     "user_id": user_id,

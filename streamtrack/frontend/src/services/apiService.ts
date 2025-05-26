@@ -99,3 +99,43 @@ export const getNotesByMovieId = async (movieId: string): Promise<Note[]> => {
   }
   return response.json();
 };
+
+export const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
+  const url = `${API_URL}${endpoint}`;  
+  const defaultHeaders: Record<string, string> = {};
+
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+
+  if (keycloak.token) {
+    defaultHeaders['Authorization'] = `Bearer ${keycloak.token}`;
+  }
+
+  const config: RequestInit = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  };
+
+  const response = await fetch(url, config);
+
+  if (!response.ok) {
+    let errorMessage = 'Wystąpił błąd';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.detail || errorData.message || errorMessage;
+    } catch {
+      errorMessage = response.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) {
+    return {};
+  }
+
+  return response.json();
+};

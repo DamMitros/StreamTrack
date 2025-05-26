@@ -4,3 +4,4 @@ docker-compose(old)*
 streamtrack/.*
 streamtrack/tmdb_api_key.secret
 __pycache__
+avatars/
