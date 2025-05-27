@@ -19,12 +19,7 @@ interface HorizontalWatchlistSectionProps {
 }
 
 const HorizontalWatchlistSection: React.FC<HorizontalWatchlistSectionProps> = ({
-  title,
-  items,
-  onRemove,
-  confirmingDeleteId,
-  isLoading
-}) => {
+  title, items, onRemove, confirmingDeleteId, isLoading}) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollLeft = () => {

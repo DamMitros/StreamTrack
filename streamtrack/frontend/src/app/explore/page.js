@@ -222,21 +222,9 @@ const ExplorePage = () => {
 
   useEffect(() => {
     if (mounted && !searchTerm.trim()) {
-      handleApiSearch(1);
-    }
-  }, [mounted, handleApiSearch, searchTerm]);
-
-  useEffect(() => {
-    if (mounted) {
-      handleApiSearch(1);
-    }
-  }, [mounted, selectedMediaType, handleApiSearch]);
-
-  useEffect(() => {
-    if (mounted && !searchTerm.trim()) {
       handleApiSearch(1); 
     }
-  }, [mounted, selectedGenres, selectedPlatforms, selectedSortBy, handleApiSearch, searchTerm]); 
+  }, [mounted, selectedMediaType, selectedGenres, selectedPlatforms, selectedSortBy, handleApiSearch, searchTerm]); 
 
   useEffect(() => {
     const fetchProvidersForItems = async () => {

@@ -19,11 +19,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-    platform: linux/amd64
+    platform: linux/amd64, linux/arm64
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
     container_name: keycloak
+    restart: always
     command: ["start-dev", "--import-realm"]
     environment:
       KC_DB: dev-file
@@ -37,12 +38,12 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak:/opt/keycloak/data/import
     healthcheck:
-      test: ["CMD", "/opt/keycloak/bin/kc.sh", "health"]
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/8080' || exit 1"]
       interval: 30s
-      timeout: 20s      
+      timeout: 10s      
       retries: 5
       start_period: 90s 
-    platform: linux/amd64
+    platform: linux/amd64, linux/arm64
 
   tmdb-proxy:
     build:
@@ -50,6 +51,7 @@ services:
       args:
         PYTHON_VERSION: 3.11-slim
     container_name: tmdb-proxy
+    restart: always
     environment:
       TMDB_API_KEY_FILE: /run/secrets/tmdb_api_key
     secrets:
@@ -65,7 +67,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    platform: linux/amd64 
+    platform: linux/amd64, linux/arm64
 
   api:
     build:
@@ -82,17 +84,18 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-      # keycloak:  # Tymczasowo
-      #   condition: service_healthy
+      keycloak:
+        condition: service_healthy
     restart: always
     volumes:
       - ./api:/app 
-    # healthcheck:
-    #   test: ["CMD-SHELL", "curl -f http://localhost:8000/api || exit 1"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    platform: linux/amd64
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    platform: linux/amd64, linux/arm64
 
   frontend:
     build:
@@ -101,6 +104,7 @@ services:
       args:
         NODE_VERSION: 20-alpine
     container_name: frontend
+    restart: always
     ports:
       - "3000:3000"
     networks:
@@ -113,19 +117,19 @@ services:
       - /app/.next 
     command: npm run dev
     depends_on:
-      # api:
-      #   condition: service_healthy
+      api:
+        condition: service_healthy
       tmdb-proxy:
         condition: service_healthy
-      # keycloak: # Tymczasowo 
-      #   condition: service_healthy
+      keycloak:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
-    platform: linux/amd64
+    platform: linux/amd64, linux/arm64
     
 volumes:
   keycloak_data:

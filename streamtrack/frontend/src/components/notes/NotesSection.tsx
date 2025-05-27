@@ -184,7 +184,7 @@ const NotesSection: React.FC<NotesSectionProps> = ({ mediaId, mediaType, title }
     return details.poster_path ? `https://image.tmdb.org/t/p/w200${details.poster_path}` : null;
   };
   
-  const sectionTitle = mediaId && title ? `Notatki dla: ${title}` : "Moje Notatki";
+  const sectionTitle = mediaId && title ? `Notatki dla: ${title}` : "";
 
   return (
     <div className="mt-1 p-4 rounded-lg shadow-md relative">

@@ -1,11 +1,10 @@
 ARG PYTHON_VERSION=3.11-slim
-# Etap budowania
+
 FROM python:${PYTHON_VERSION} AS builder
 WORKDIR /install
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Etap produkcyjny
 FROM python:${PYTHON_VERSION} AS runner
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 

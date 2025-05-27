@@ -43,11 +43,6 @@ const AdminDashboardPage = () => {
     <div className="relative min-h-screen">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950 transition-all duration-500"></div>
       
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-sky-300/30 to-purple-400/30 dark:from-sky-400/10 dark:to-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-300/30 to-indigo-400/30 dark:from-pink-400/10 dark:to-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
-
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
