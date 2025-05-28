@@ -6,7 +6,6 @@ const keycloakConfig = {
   clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'frontend',
 };
 
-console.log('Keycloak configuration from utils/keycloak.ts:', keycloakConfig); 
 const keycloak = new Keycloak(keycloakConfig);
 
 export default keycloak;
