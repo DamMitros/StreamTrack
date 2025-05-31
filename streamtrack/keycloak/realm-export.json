@@ -1,5 +1,6 @@
 {
   "realm": "streamtrack",
+  "enabled": true,
   "clients": [
     {
       "clientId": "frontend",

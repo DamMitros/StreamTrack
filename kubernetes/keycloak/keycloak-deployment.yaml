@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-deployment
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:24.0.1 
+        args: ["start-dev", "--import-realm"]
+        env:
+        - name: KEYCLOAK_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-secret
+              key: admin_username
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-secret
+              key: admin_password
+        - name: KC_DB
+          value: "dev-file"
+        - name: KC_HOSTNAME_STRICT
+          value: "false"
+        - name: KC_HOSTNAME_STRICT_HTTPS
+          value: "false"
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_PROXY_ADDRESS_FORWARDING
+          value: "true" 
+        - name: KC_PROXY_HEADERS
+          value: "xforwarded"
+        - name: KC_HOSTNAME_URL
+          value: "http://localhost"
+        - name: KC_IMPORT_STRATEGY
+          value: "OVERWRITE_EXISTING"
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /realms/master
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: keycloak-realm-config
+          mountPath: /opt/keycloak/data/import 
+        - name: keycloak-data
+          mountPath: /opt/keycloak/data
+      volumes:
+      - name: keycloak-data
+        persistentVolumeClaim:
+          claimName: keycloak-pvc
+      - name: keycloak-realm-config
+        configMap:
+          name: keycloak-realm-configmap
+          items:
+            - key: realm-export.json
+              path: realm-export.json

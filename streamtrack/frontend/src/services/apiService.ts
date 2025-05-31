@@ -22,82 +22,39 @@ export interface NoteUpdateData {
   content?: string;
 }
 
-const getAuthHeaders = () => {
-  if (!keycloak.token) {
-    console.error("User not authenticated, no token available.");
-    throw new Error("User not authenticated");
-  }
-  return {
-    Authorization: `Bearer ${keycloak.token}`,
-    "Content-Type": "application/json",
-  };
-};
-
 export const getNotes = async (): Promise<Note[]> => {
-  const response = await fetch(`${API_URL}/notes`, {
-    headers: getAuthHeaders(),
-  });
-  if (!response.ok) {
-    throw new Error("Failed to fetch notes");
-  }
-  return response.json();
+  return apiCall('/api/notes');
 };
 
 export const createNote = async (note: NoteIn): Promise<Note> => {
-  const response = await fetch(`${API_URL}/notes`, {
+  return apiCall('/api/notes', {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(note),
   });
-  if (!response.ok) {
-    const errorData = await response
-      .json()
-      .catch(() => ({ detail: "Failed to create note" }));
-    throw new Error(errorData.detail || "Failed to create note");
-  }
-  return response.json();
 };
 
 export const deleteNote = async (noteId: string): Promise<{ message: string; deleted_note_id: string }> => {
-  const response = await fetch(`${API_URL}/notes/${noteId}`, {
+  return apiCall(`/api/notes/${noteId}`, {
     method: "DELETE",
-    headers: getAuthHeaders(),
   });
-  if (!response.ok) {
-    const errorData = await response
-      .json()
-      .catch(() => ({ detail: "Failed to delete note" }));
-    throw new Error(errorData.detail || "Failed to delete note");
-  }
-  return response.json();
 };
 
 export const updateNote = async (noteId: string, noteUpdateData: NoteUpdateData): Promise<Note> => {
-  const response = await fetch(`${API_URL}/notes/${noteId}`, {
+  return apiCall(`/notes/${noteId}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
     body: JSON.stringify(noteUpdateData),
   });
-  if (!response.ok) {
-    const errorData = await response
-      .json()
-      .catch(() => ({ detail: "Failed to update note" }));
-    throw new Error(errorData.detail || "Failed to update note");
-  }
-  return response.json();
 };
 
 export const getNotesByMovieId = async (movieId: string): Promise<Note[]> => {
-  const response = await fetch(`${API_URL}/notes/media/${movieId}`, { 
-    headers: getAuthHeaders(),
-  });
-  if (!response.ok) {
-    if (response.status === 404) {
+  try {
+    return await apiCall(`/api/notes/media/${movieId}`);
+  } catch (error: any) {
+    if (error.message?.includes('404')) {
       return [];
     }
     throw new Error("Failed to fetch notes for media item");
   }
-  return response.json();
 };
 
 export const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {

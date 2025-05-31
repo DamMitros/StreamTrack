@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  labels:
+    app: api
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: gollet/streamtrack-api:latest 
+        command: ["uvicorn"] 
+        args: ["main:app", "--host", "0.0.0.0", "--port", "8000"] 
+        ports:
+        - containerPort: 8000 
+        volumeMounts:
+        - name: api-static-volume
+          mountPath: /app/static
+        env:
+          - name: DATABASE_URL
+            value: "mongodb://mongo-service:27017/notes_db" 
+          - name: MONGO_URL
+            value: "mongodb://mongo-service:27017" 
+          - name: KEYCLOAK_SERVER_URL
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_server_url
+          - name: KEYCLOAK_REALM
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_realm
+          - name: KEYCLOAK_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_client_id
+          - name: KEYCLOAK_JWKS_URL
+            value: "http://keycloak-service:8080/realms/streamtrack/protocol/openid-connect/certs"
+          - name: KEYCLOAK_URL
+            value: "http://keycloak-service:8080"
+      volumes:
+      - name: api-static-volume
+        persistentVolumeClaim:
+          claimName: api-static-pvc

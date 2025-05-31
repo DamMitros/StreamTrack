@@ -16,6 +16,9 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
   return (
     <html lang="pl" suppressHydrationWarning>
+      <head>
+        <script src="/env.js" defer></script>
+      </head>
       <body className={inter.className}>
         <KeycloakProvider>
           <NotificationProvider>

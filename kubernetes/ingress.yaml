@@ -1,0 +1,203 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "4 256k" 
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-cookie-path: "/ /"
+    nginx.ingress.kubernetes.io/client-body-timeout: "600"
+    nginx.ingress.kubernetes.io/client-header-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout invalid_header http_500 http_502 http_503"
+    nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "3"
+    nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: "60"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /_next/static
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+      - path: /static
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+      - path: /resources
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /mongo
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "4 256k" 
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-cookie-path: "/ /"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /realms
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /resources
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-legacy-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "4 256k" 
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-cookie-path: "/ /"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /auth/(realms/.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080 
+      - path: /auth/(admin/.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /auth/(resources/.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tmdb-proxy-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "4 256k" 
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-cookie-path: "/ /"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /tmdb/(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: tmdb-proxy-service
+            port:
+              number: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextjs-static-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/client-body-timeout: "600"
+    nginx.ingress.kubernetes.io/client-header-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "256k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "8 256k"
+    nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "512k"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /_next/static/chunks
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tmdb-proxy-deployment
+  labels:
+    app: tmdb-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tmdb-proxy
+  template:
+    metadata:
+      labels:
+        app: tmdb-proxy
+    spec:
+      containers:
+      - name: tmdb-proxy
+        image: gollet/streamtrack-tmdb-proxy:latest 
+        command: ["uvicorn"] 
+        args: ["main:app", "--host", "0.0.0.0", "--port", "9000"] 
+        ports:
+        - containerPort: 9000 
+        env:
+          - name: TMDB_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tmdb-proxy-secret 
+                key: tmdb_api_key

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm-configmap
+  labels:
+    app: keycloak
+data: 
+  realm-export.json: |-
+    {
+      "realm": "streamtrack",
+      "enabled": true,
+      "clients": [
+        {
+          "clientId": "frontend",
+          "enabled": true,
+          "publicClient": true,
+          "redirectUris": [
+            "http://localhost/*"
+          ],
+          "webOrigins": [
+            "http://localhost"
+          ],
+          "baseUrl": "http://localhost",
+          "attributes": {
+            "pkce.code.challenge.method": "S256"
+          }
+        }
+      ],
+      "roles": {
+        "realm": [{ "name": "user" }, { "name": "admin" }]
+      },
+      "users": [
+        {
+          "username": "admin1",
+          "enabled": true,
+          "credentials": [{ "type": "password", "value": "admin1" }],
+          "realmRoles": ["admin"]
+        }
+      ]
+    }
