@@ -14,12 +14,5 @@
   "roles": {
     "realm": [{ "name": "user" }, { "name": "admin" }]
   },
-  "users": [
-    {
-      "username": "admin1",
-      "enabled": true,
-      "credentials": [{ "type": "password", "value": "admin1" }],
-      "realmRoles": ["admin"]
-    }
-  ]
+  "users": []
 }

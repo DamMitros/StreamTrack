@@ -4,8 +4,15 @@ metadata:
   name: api-deployment
   labels:
     app: api
+    component: backend
+    version: v1
 spec:
   replicas: 1 
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: api
@@ -13,10 +20,18 @@ spec:
     metadata:
       labels:
         app: api
+        component: backend
+        version: v1
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
       - name: api
         image: gollet/streamtrack-api:latest 
+        imagePullPolicy: Always
         command: ["uvicorn"] 
         args: ["main:app", "--host", "0.0.0.0", "--port", "8000"] 
         ports:
@@ -24,6 +39,35 @@ spec:
         volumeMounts:
         - name: api-static-volume
           mountPath: /app/static
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
         env:
           - name: DATABASE_URL
             value: "mongodb://mongo-service:27017/notes_db" 

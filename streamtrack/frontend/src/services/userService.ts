@@ -37,46 +37,46 @@ export interface UserPromoteRequest {
 
 export const userService = {
   async register(userData: UserCreate): Promise<User> {
-    return apiCall('/register', {
+    return apiCall('/api/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   },
 
   async getAllUsers(): Promise<User[]> {
-    return apiCall('/users');
+    return apiCall('/api/users');
   },
 
   async getProfile(): Promise<User> {
-    return apiCall('/profile');
+    return apiCall('/api/profile');
   },
 
   async updateProfile(userData: UserUpdate): Promise<User> {
-    return apiCall('/profile', {
+    return apiCall('/api/profile', {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   },
 
   async promoteUser(promotionData: UserPromoteRequest): Promise<{message: string}> {
-    return apiCall('/promote', {
+    return apiCall('/api/promote', {
       method: 'POST',
       body: JSON.stringify(promotionData),
     });
   },
 
   async getUserById(userId: string): Promise<User> {
-    return apiCall(`/users/${userId}`);
+    return apiCall(`/api/users/${userId}`);
   },
 
   async deactivateUser(userId: string): Promise<{message: string}> {
-    return apiCall(`/users/${userId}`, {
+    return apiCall(`/api/users/${userId}`, {
       method: 'DELETE',
     });
   },
 
   async activateUser(userId: string): Promise<{message: string}> {
-    return apiCall(`/users/${userId}/activate`, {
+    return apiCall(`/api/users/${userId}/activate`, {
       method: 'PUT',
     });
   },
@@ -85,7 +85,7 @@ export const userService = {
     const formData = new FormData();
     formData.append('file', file);
     
-    return apiCall('/avatar', {
+    return apiCall('/api/avatar', {
       method: 'POST',
       body: formData,
     });

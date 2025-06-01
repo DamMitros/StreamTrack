@@ -17,6 +17,7 @@ spec:
       containers:
       - name: keycloak
         image: quay.io/keycloak/keycloak:24.0.1 
+        imagePullPolicy: IfNotPresent 
         args: ["start-dev", "--import-realm"]
         env:
         - name: KEYCLOAK_ADMIN
@@ -48,12 +49,29 @@ spec:
         ports:
         - name: http
           containerPort: 8080
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
         readinessProbe:
           httpGet:
             path: /realms/master
             port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 120
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /realms/master
+            port: 8080
+          initialDelaySeconds: 180
+          periodSeconds: 45
+          timeoutSeconds: 15
+          failureThreshold: 3
         volumeMounts:
         - name: keycloak-realm-config
           mountPath: /opt/keycloak/data/import 

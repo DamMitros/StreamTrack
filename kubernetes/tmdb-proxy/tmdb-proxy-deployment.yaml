@@ -14,13 +14,48 @@ spec:
       labels:
         app: tmdb-proxy
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000     
       containers:
       - name: tmdb-proxy
         image: gollet/streamtrack-tmdb-proxy:latest 
+        imagePullPolicy: Always
         command: ["uvicorn"] 
         args: ["main:app", "--host", "0.0.0.0", "--port", "9000"] 
         ports:
         - containerPort: 9000 
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /docs
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
         env:
           - name: TMDB_API_KEY
             valueFrom:
