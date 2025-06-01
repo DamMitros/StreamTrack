@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+import os
 
 from routes.notes import router as notes_router
 from routes.admin import router as admin_router
@@ -10,9 +11,11 @@ from routes.users import router as users_router
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000", 
-]
+origins_env = os.getenv("CORS_ORIGINS")
+if origins_env:
+    origins = [o.strip() for o in origins_env.split(",") if o.strip()]
+else:
+    origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,

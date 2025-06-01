@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  labels:
+    app: api
+    component: backend
+    version: v1
+spec:
+  replicas: 1 
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        component: backend
+        version: v1
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: api
+        image: gollet/streamtrack-api:latest 
+        imagePullPolicy: Always
+        command: ["uvicorn"] 
+        args: ["main:app", "--host", "0.0.0.0", "--port", "8000"] 
+        ports:
+        - containerPort: 8000 
+        volumeMounts:
+        - name: api-static-volume
+          mountPath: /app/static
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        env:
+          - name: DATABASE_URL
+            value: "mongodb://mongo-service:27017/notes_db" 
+          - name: MONGO_URL
+            value: "mongodb://mongo-service:27017" 
+          - name: KEYCLOAK_SERVER_URL
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_server_url
+          - name: KEYCLOAK_REALM
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_realm
+          - name: KEYCLOAK_CLIENT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_client_id
+          - name: KEYCLOAK_JWKS_URL
+            value: "http://keycloak-service:8080/realms/streamtrack/protocol/openid-connect/certs"
+          - name: KEYCLOAK_URL
+            value: "http://keycloak-service:8080"
+      volumes:
+      - name: api-static-volume
+        persistentVolumeClaim:
+          claimName: api-static-pvc

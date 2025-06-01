@@ -9,17 +9,15 @@ export const getFullAvatarUrl = (avatarUrl: string | undefined | null): string |
     return avatarUrl;
   }
 
-  const baseUrl = API_URL?.replace('/api', '') || 'http://localhost:8000';
-
   if (avatarUrl.startsWith('/static/')) {
-    return `${baseUrl}${avatarUrl}`;
+    return `${API_URL}${avatarUrl}`;
   }
 
   if (!avatarUrl.startsWith('/')) {
-    return `${baseUrl}/static/avatars/${avatarUrl}`;
+    return `${API_URL}/static/avatars/${avatarUrl}`;
   }
 
-  return `${baseUrl}${avatarUrl}`;
+  return `${API_URL}${avatarUrl}`;
 };
 
 export const getAvatarInitial = (name: string | undefined | null): string => {

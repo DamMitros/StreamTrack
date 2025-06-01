@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+data:
+  hsts: "false"
+  proxy-read-timeout: "900"
+  proxy-send-timeout: "900"
+  proxy-connect-timeout: "600"
+  proxy-buffering: "on"
+  proxy-buffer-size: "256k"
+  proxy-buffers: "8 256k"
+  proxy-busy-buffers-size: "512k"
+  proxy-next-upstream: "error timeout invalid_header http_500 http_502 http_503"
+  proxy-next-upstream-tries: "3"
+  proxy-next-upstream-timeout: "60"
+  upstream-keepalive-connections: "32"
+  upstream-keepalive-timeout: "60"
+  client-body-timeout: "300"
+  client-header-timeout: "300"
+  gzip-types: "application/javascript text/javascript text/css text/xml text/plain application/xml application/xml+rss"
+  gzip-level: "6"

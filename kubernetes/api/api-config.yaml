@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  labels:
+    app: api
+data:
+  keycloak_server_url: "http://localhost" 
+  keycloak_realm: "streamtrack" 
+  keycloak_client_id: "frontend"

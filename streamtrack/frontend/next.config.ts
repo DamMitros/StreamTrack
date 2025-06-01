@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   output: "standalone",
+  assetPrefix: process.env.ASSET_PREFIX || undefined,
+  trailingSlash: false,
+  basePath: process.env.BASE_PATH || "",
   images: {
     remotePatterns: [
       {
