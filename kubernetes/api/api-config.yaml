@@ -5,6 +5,6 @@ metadata:
   labels:
     app: api
 data:
-  keycloak_server_url: "http://localhost" 
+  keycloak_server_url: "http://keycloak-service:8080" 
   keycloak_realm: "streamtrack" 
   keycloak_client_id: "frontend"
