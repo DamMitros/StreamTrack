@@ -7,7 +7,6 @@ metadata:
     component: backend
     version: v1
 spec:
-  # replicas managed by HPA - see api-hpa.yaml
   strategy:
     type: RollingUpdate
     rollingUpdate:

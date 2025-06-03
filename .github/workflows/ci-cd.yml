@@ -1,0 +1,46 @@
+name: CI/CD - StreamTrack
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./streamtrack/api
+          push: true
+          tags: gollet/streamtrack-api:latest
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build & Push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./streamtrack/frontend
+          push: true
+          tags: gollet/streamtrack-frontend:latest
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build & Push TMDB Proxy image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./streamtrack/tmdb-proxy
+          push: true
+          tags: gollet/streamtrack-tmdb-proxy:latest
+          platforms: linux/amd64,linux/arm64
