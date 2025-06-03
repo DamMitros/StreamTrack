@@ -5,7 +5,6 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 1 
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -36,11 +35,11 @@ spec:
             - ALL
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
             memory: "1Gi"
-            cpu: "500m"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
         livenessProbe:
           httpGet:
             path: /

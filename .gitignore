@@ -1,7 +1,5 @@
-plan.txt
 notes.txt
 streamtrack/.*
 streamtrack/tmdb_api_key.secret
 __pycache__
 avatars/
-opis.md
