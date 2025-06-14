@@ -8,3 +8,5 @@ data:
   keycloak_server_url: "http://keycloak-service:8080" 
   keycloak_realm: "streamtrack" 
   keycloak_client_id: "frontend"
+  keycloak_audience: "account"
+  keycloak_issuer: "http://localhost/realms/streamtrack"

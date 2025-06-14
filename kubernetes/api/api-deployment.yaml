@@ -77,7 +77,7 @@ spec:
               configMapKeyRef:
                 name: api-config
                 key: keycloak_server_url
-          - name: KEYCLOAK_REALM
+          - name: KEYCLOAK_REALM_NAME
             valueFrom:
               configMapKeyRef:
                 name: api-config
@@ -87,10 +87,16 @@ spec:
               configMapKeyRef:
                 name: api-config
                 key: keycloak_client_id
-          - name: KEYCLOAK_JWKS_URL
-            value: "http://keycloak-service:8080/realms/streamtrack/protocol/openid-connect/certs"
-          - name: KEYCLOAK_URL
-            value: "http://keycloak-service:8080"
+          - name: KEYCLOAK_ISSUER
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_issuer
+          - name: KEYCLOAK_AUDIENCE
+            valueFrom:
+              configMapKeyRef:
+                name: api-config
+                key: keycloak_audience
       volumes:
       - name: api-static-volume
         persistentVolumeClaim:

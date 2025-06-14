@@ -40,7 +40,7 @@ export const deleteNote = async (noteId: string): Promise<{ message: string; del
 };
 
 export const updateNote = async (noteId: string, noteUpdateData: NoteUpdateData): Promise<Note> => {
-  return apiCall(`/notes/${noteId}`, {
+  return apiCall(`/api/notes/${noteId}`, {
     method: "PUT",
     body: JSON.stringify(noteUpdateData),
   });
