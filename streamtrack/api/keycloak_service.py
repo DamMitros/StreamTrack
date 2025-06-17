@@ -4,8 +4,8 @@ from typing import Dict, Any, List
 
 class KeycloakService:
 	def __init__(self):
-		self.keycloak_url = os.getenv("KEYCLOAK_URL", "http://keycloak:8080")
-		self.realm = os.getenv("KEYCLOAK_REALM", "streamtrack")
+		self.keycloak_url = os.getenv("KEYCLOAK_SERVER_URL", "http://keycloak:8080")
+		self.realm = os.getenv("KEYCLOAK_REALM_NAME", "streamtrack")
 		self.admin_username = os.getenv("KEYCLOAK_ADMIN", "admin")
 		self.admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
 		self.client_id = "admin-cli"
